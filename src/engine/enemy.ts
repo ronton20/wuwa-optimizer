@@ -2,15 +2,10 @@ import type { Element } from '../data/types';
 import type { Enemy } from './types';
 
 const ALL: Element[] = ['Glacio', 'Fusion', 'Electro', 'Aero', 'Spectro', 'Havoc', 'Physical'];
-const uniformRes = (r: number) => Object.fromEntries(ALL.map((e) => [e, r])) as Record<Element, number>;
+export const uniformRes = (r: number) => Object.fromEntries(ALL.map((e) => [e, r])) as Record<Element, number>;
 
-/** Most enemies have 10% resistance to every element; stages can raise or lower it (set it in Custom). */
-export const ENEMY_PRESETS: Record<string, Enemy> = {
-  'Tower of Adversity': { level: 100, res: uniformRes(10) },
-  'Whimpering Wastes': { level: 100, res: uniformRes(10) },
-  'Open world Lv 90': { level: 90, res: uniformRes(10) },
-};
-export const DEFAULT_ENEMY = ENEMY_PRESETS['Tower of Adversity'];
+/** Default target: Lv 100, no resistances. Level and RES per element are set in the Enemy tab. */
+export const DEFAULT_ENEMY: Enemy = { level: 100, res: uniformRes(0) };
 
 export const CHARACTER_LEVEL = 90;
 

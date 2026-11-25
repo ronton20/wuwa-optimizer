@@ -4,4 +4,7 @@ export const ROSTER: Record<number, string> = {
   1108: 'Hiyuki',
   1508: 'Chisa',
   1413: 'Qingxiao',
+  // teammates (Phase 3)
+  1109: 'Lucilla',
+  1110: 'Suisui',
 };

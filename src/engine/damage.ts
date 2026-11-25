@@ -1,5 +1,5 @@
 import type { Character, DmgType, Element, GameData, HitTerm, Skill, SkillKind, SkillRow, StatKey } from '../data/types';
-import { defMultiplier, resMultiplier } from './enemy';
+import { DEFAULT_ENEMY, defMultiplier, resMultiplier } from './enemy';
 import { collectEffects, modValue, resolveEffects } from './effects';
 import { computeStats, type ContributionGroup, type Stats } from './stats';
 import type { ActiveEffect, Build, Effect, Enemy, HitFilter } from './types';
@@ -76,20 +76,24 @@ export interface HitResult extends HitValue {
 }
 
 export interface DamageOptions {
-  enemy: Enemy;
+  /** overrides build.enemy */
+  enemy?: Enemy;
   /** effects not from the build itself: stage buffs, teammates (Phase 3) */
   extra?: Effect[];
+  /** skip the per-source breakdown (much faster; segments are empty) */
+  noBreakdown?: boolean;
 }
 
 /** Damage of every hit of every skill for a build. */
-export function computeDamage(build: Build, data: GameData, opts: DamageOptions): { stats: Stats; hits: HitResult[] } {
+export function computeDamage(build: Build, data: GameData, opts: DamageOptions = {}): { stats: Stats; hits: HitResult[] } {
   const c = data.characters.find((x) => x.id === build.characterId) as Character;
+  const enemy = opts.enemy ?? build.enemy ?? DEFAULT_ENEMY;
   const effects = resolveEffects([...collectEffects(build, data), ...(opts.extra ?? [])], build.conditions);
   const full = computeStats(build, data, effects);
 
   // stats with one group removed, for the breakdown (and with everything removed for the grey base)
-  const without = new Map(BREAKDOWN_GROUPS.map((g) => [g, computeStats(build, data, effects, [g])]));
-  const bare = computeStats(build, data, effects, BREAKDOWN_GROUPS);
+  const without = opts.noBreakdown ? new Map() : new Map(BREAKDOWN_GROUPS.map((g) => [g, computeStats(build, data, effects, [g])]));
+  const bare = opts.noBreakdown ? full : computeStats(build, data, effects, BREAKDOWN_GROUPS);
 
   const hits: HitResult[] = [];
   for (const skill of c.skills) {
@@ -97,9 +101,13 @@ export function computeDamage(build: Build, data: GameData, opts: DamageOptions)
     for (const row of skill.rows) {
       row.hits?.forEach((term, termIndex) => {
         const h: HitContext = { skillKind: skill.kind, row: row.label, element: term.element, dmgType: term.dmgType };
-        const value = hitValue(full, effects, term, level, h, opts.enemy, new Set());
-        const base = hitValue(bare, effects, term, level, h, opts.enemy, new Set(BREAKDOWN_GROUPS)).avg;
-        const deltas = BREAKDOWN_GROUPS.map((g) => ({ group: g, value: value.avg - hitValue(without.get(g)!, effects, term, level, h, opts.enemy, new Set([g])).avg }));
+        const value = hitValue(full, effects, term, level, h, enemy, new Set());
+        if (opts.noBreakdown) {
+          hits.push({ ...value, skill, row, termIndex, term, level, count: term.count, segments: [] });
+          return;
+        }
+        const base = hitValue(bare, effects, term, level, h, enemy, new Set(BREAKDOWN_GROUPS)).avg;
+        const deltas = BREAKDOWN_GROUPS.map((g) => ({ group: g, value: value.avg - hitValue(without.get(g)!, effects, term, level, h, enemy, new Set([g])).avg }));
         const positive = deltas.filter((d) => d.value > 0);
         const sum = positive.reduce((a, d) => a + d.value, 0);
         const scale = sum > 0 ? (value.avg - base) / sum : 0;

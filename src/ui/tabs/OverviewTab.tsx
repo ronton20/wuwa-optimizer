@@ -55,10 +55,10 @@ export function OverviewTab({ characterId, stats }: { characterId: number; stats
       </div>
 
       <div>
-        <SectionTitle right={<span className="text-xs text-muted">{ui.cost} {build.echoes.reduce((a, p) => a + (data.echoes.find((e) => e.id === p.echoId)?.cost ?? 0), 0)}/12</span>}>{ui.echoes}</SectionTitle>
-        <p className="mb-2 text-xs text-muted">{ui.echoesSoon}</p>
-        <ul className="grid grid-cols-5 gap-2">
+        <SectionTitle right={<span className="text-xs text-muted">{ui.cost} {build.echoes.reduce((a, p) => a + (p ? data.echoes.find((e) => e.id === p.echoId)?.cost ?? 0 : 0), 0)}/12</span>}>{ui.echoes}</SectionTitle>
+                <ul className="grid grid-cols-5 gap-2">
           {build.echoes.map((p, i) => {
+            if (!p) return <li key={i} className="aspect-square rounded-lg border border-dashed border-white/10" />;
             const e = data.echoes.find((x) => x.id === p.echoId);
             const src = img(`echo:${p.echoId}`);
             return (

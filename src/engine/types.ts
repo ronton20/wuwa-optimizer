@@ -10,15 +10,32 @@ export interface EchoPiece {
   subs: { stat: StatKey; value: number }[];
 }
 
+/** A teammate: only what reaches the on-field Resonator matters. */
+export interface Teammate {
+  characterId: number;
+  sequence: number;
+  weapon?: { id: number; rank: number };
+  /** main echo name (team-buff echoes only) */
+  mainEcho?: string;
+  /** 5-piece set name (team-buff sets only) */
+  set?: string;
+  /** anything else the teammate gives, typed by the user */
+  custom: { key: ModKey; value: number; label: string }[];
+}
+
 export interface Build {
   characterId: number;
   sequence: number; // 0..6
   skillLevels: Partial<Record<SkillKind, number>>; // default 10
   weapon: { id: number; rank: number }; // rank 1..5
-  /** index 0 is the main echo */
-  echoes: EchoPiece[];
+  /** index 0 is the main echo; empty slots are null */
+  echoes: (EchoPiece | null)[];
   /** effect id -> toggle (boolean) or stack count (number). Missing = the effect's default. */
   conditions: Record<string, boolean | number>;
+  /** up to 2 teammates */
+  team?: (Teammate | null)[];
+  /** missing = Tower of Adversity default */
+  enemy?: Enemy;
 }
 
 export interface Enemy {

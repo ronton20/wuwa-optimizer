@@ -2,7 +2,8 @@ import { describe, expect, it } from 'vitest';
 import data from '../../data/current';
 import { collectEffects, conditionMaxes, resolveEffects } from '../effects';
 import { computeDamage } from '../damage';
-import { DEFAULT_ENEMY } from '../enemy';
+import { uniformRes } from '../enemy';
+const DEFAULT_ENEMY = { level: 100, res: uniformRes(10) };
 import { BUILDS } from './builds';
 
 const carte = BUILDS.find((b) => b.name === 'Cartethyia')!.build;

@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import data from '../../data/current';
 import { computeDamage } from '../damage';
-import { DEFAULT_ENEMY, defMultiplier, resMultiplier } from '../enemy';
+import { defMultiplier, resMultiplier, uniformRes } from '../enemy';
+const DEFAULT_ENEMY = { level: 100, res: uniformRes(10) }; // Tower of Adversity reference target
 import type { Effect } from '../types';
 import { BUILDS } from './builds';
 
@@ -35,7 +36,7 @@ describe('every hit of every launch character', () => {
 });
 
 describe('toggles move the numbers the right way', () => {
-  const hiyuki = BUILDS[0].build;
+  const hiyuki = { ...BUILDS[0].build, team: [] };
   const iv = (conditions: Record<string, boolean | number>) =>
     computeDamage({ ...hiyuki, conditions }, data, { enemy: DEFAULT_ENEMY }).hits.find((h) => h.row.label === 'Foreclaiming: Inward Vision DMG')!;
 
@@ -63,7 +64,7 @@ describe('toggles move the numbers the right way', () => {
 it('Hiyuki Liberation crit is in the right range of the in-game capture', () => {
   const stage: Effect[] = [{ id: 'stage', group: 'enemy', source: 'ToA floor 1', text: '', mods: [{ key: 'critDmg', value: 25 }, { key: 'dmgGlacio', value: 30 }] }];
   const enemy = { level: 100, res: { ...DEFAULT_ENEMY.res, Glacio: 0 } };
-  const { hits } = computeDamage({ ...BUILDS[0].build, conditions: { 'c.hiyuki.s4': false } }, data, { enemy, extra: stage });
+  const { hits } = computeDamage({ ...BUILDS[0].build, team: [], conditions: { 'c.hiyuki.s4': false } }, data, { enemy, extra: stage });
   const crit = hits.find((h) => h.row.label === 'Foreclaiming: Inward Vision DMG')!.crit;
   expect(Math.abs(crit / 178809 - 1)).toBeLessThan(0.08);
 });

@@ -1,6 +1,7 @@
 import type { Character, GameData, Sonata } from '../../data/types';
-import type { ActiveEffect, Build, Effect } from '../types';
-import { characterEffects } from './characters';
+import type { ActiveEffect, Build, Effect, Teammate } from '../types';
+import { characterEffects, KITS } from './characters';
+import { TEAM_ECHOES, TEAM_KITS, TEAM_SETS, TEAM_WEAPONS, echoBaseName } from './team';
 import { mainEchoEffects, sonataEffects } from './echoes';
 import { weaponEffects } from './weapons';
 
@@ -23,6 +24,7 @@ export function collectEffects(build: Build, data: GameData): Effect[] {
   const counts = new Map<Sonata, number>();
   const seen = new Set<string>();
   for (const p of build.echoes) {
+    if (!p) continue;
     const key = `${p.setId}:${p.echoId}`;
     if (seen.has(key)) continue;
     seen.add(key);
@@ -31,12 +33,41 @@ export function collectEffects(build: Build, data: GameData): Effect[] {
   }
   effects.push(...sonataEffects(counts));
 
-  const main = build.echoes[0] && data.echoes.find((e) => e.id === build.echoes[0].echoId);
+  const first = build.echoes[0];
+  const main = first && data.echoes.find((e) => e.id === first.echoId);
   if (main) effects.push(...mainEchoEffects(main.name, c as Character));
 
   effects.push(...characterEffects(c.name, build.sequence));
   effects.push(...ACCOUNT_EFFECTS);
+  (build.team ?? []).forEach((t, slot) => { if (t && t.characterId !== build.characterId) effects.push(...teammateEffects(t, slot, data)); });
   return effects;
+}
+
+/** Everything a teammate gives the on-field Resonator. Ids/keys are prefixed per slot ("t1.", "t2."). */
+export function teammateEffects(t: Teammate, slot: number, data: GameData): Effect[] {
+  const c = data.characters.find((x) => x.id === t.characterId);
+  if (!c) return [];
+  const prefix = `t${slot + 1}.`;
+  const who = `Teammate ${slot + 1} (${c.name})`;
+  const raw: Effect[] = [
+    ...(TEAM_KITS[c.name] ?? []).filter((e) => t.sequence >= e.seq),
+    ...(KITS[c.name] ?? []).filter((e) => e.team && t.sequence >= e.seq),
+  ];
+  const w = t.weapon && data.weapons.find((x) => x.id === t.weapon!.id);
+  if (w) raw.push(...(TEAM_WEAPONS[w.name]?.(t.weapon!.rank) ?? []));
+  if (t.mainEcho) raw.push(...(TEAM_ECHOES[echoBaseName(t.mainEcho)] ?? []));
+  if (t.set) raw.push(...(TEAM_SETS[t.set] ?? []));
+  const out: Effect[] = raw.map((e) => ({
+    ...e,
+    id: prefix + e.id,
+    group: 'team',
+    source: `${who} · ${e.source}`,
+    condition: e.condition && { ...e.condition, key: e.condition.key ? prefix + e.condition.key : undefined },
+  }));
+  t.custom.forEach((m, i) => {
+    if (m.value) out.push({ id: `${prefix}custom.${i}`, group: 'team', source: `${who} · ${m.label || 'Custom'}`, text: m.label || 'Custom buff', mods: [{ key: m.key, value: m.value }] });
+  });
+  return out;
 }
 
 /** The id a toggle / stack count is stored under. */

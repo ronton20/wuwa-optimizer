@@ -1,3 +1,4 @@
+import { PLAYABLE } from '../../engine';
 import { useState, type CSSProperties } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import data from '../../data/current';
@@ -11,9 +12,12 @@ import { WeaponTab } from '../tabs/WeaponTab';
 import { SkillsTab } from '../tabs/SkillsTab';
 import { SequencesTab } from '../tabs/SequencesTab';
 import { BuffsTab } from '../tabs/BuffsTab';
+import { EchoesTab } from '../tabs/EchoesTab';
+import { TeamTab } from '../tabs/TeamTab';
+import { EnemyTab, enemyOf } from '../tabs/EnemyTab';
 import { ui } from '../../strings/en';
 
-const TABS = ['overview', 'weapon', 'skills', 'sequences', 'buffs'] as const;
+const TABS = ['overview', 'weapon', 'echoes', 'skills', 'sequences', 'team', 'buffs', 'enemy'] as const;
 type Tab = (typeof TABS)[number];
 
 export function BuildScreen({ characterId }: { characterId: number }) {
@@ -50,7 +54,7 @@ export function BuildScreen({ characterId }: { characterId: number }) {
       <div className="grid gap-4 lg:grid-cols-[64px_minmax(0,1fr)_380px]">
         {/* character rail */}
         <nav aria-label="Resonators" className="flex gap-3 lg:flex-col">
-          {data.characters.map((x) => {
+          {PLAYABLE.map((x) => {
             const src = img(`char:${x.id}`);
             const active = x.id === c.id;
             return (
@@ -96,13 +100,16 @@ export function BuildScreen({ characterId }: { characterId: number }) {
                 {tab === 'weapon' && <WeaponTab characterId={characterId} />}
                 {tab === 'skills' && <SkillsTab characterId={characterId} />}
                 {tab === 'sequences' && <SequencesTab characterId={characterId} />}
+                {tab === 'echoes' && <EchoesTab characterId={characterId} />}
+                {tab === 'team' && <TeamTab characterId={characterId} />}
                 {tab === 'buffs' && <BuffsTab characterId={characterId} />}
+                {tab === 'enemy' && <EnemyTab characterId={characterId} />}
               </motion.div>
             </AnimatePresence>
           </div>
         </section>
 
-        <DamagePanel hits={result.hits} />
+        <DamagePanel hits={result.hits} enemy={enemyOf(build)} />
       </div>
     </div>
   );

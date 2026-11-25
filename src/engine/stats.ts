@@ -47,6 +47,7 @@ export function computeStats(build: Build, data: GameData, effects: ActiveEffect
 
   // echoes
   build.echoes.forEach((p, i) => {
+    if (!p) return;
     const echo = data.echoes.find((e) => e.id === p.echoId);
     const label = `${i === 0 ? 'Main echo' : `Echo ${i + 1}`} · ${echo?.name ?? p.echoId}`;
     add('echo', label, p.main.stat, p.main.value);

@@ -10,7 +10,8 @@ import { BUILDS } from './builds';
  * The menu shows a resting character: every combat-triggered effect is off.
  * Account-wide upgrades (acct.*) are passive, so they stay at their default (on).
  */
-function screenStats(build: (typeof BUILDS)[number]['build']) {
+function screenStats(b: (typeof BUILDS)[number]['build']) {
+  const build = { ...b, team: [] }; // the menu screen never includes teammates' buffs
   const effects = collectEffects(build, data);
   const off = Object.fromEntries(effects.filter((e) => e.condition && !e.id.startsWith('acct.')).map((e) => [e.id, e.condition!.kind === 'toggle' ? false : 0]));
   return computeStats(build, data, resolveEffects(effects, off));

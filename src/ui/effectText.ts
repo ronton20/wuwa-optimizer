@@ -9,6 +9,8 @@ const FLAT = new Set<ModKey>(['atk', 'hp', 'def']);
 
 const num = (v: number) => (Math.round(v * 100) / 100).toString();
 export const modLabel = (k: ModKey) => MOD_LABEL[k] ?? STAT_LABEL[k as keyof typeof STAT_LABEL] ?? k;
+/** Name next to a value: the value already carries the %, so "+20% ATK", not "+20% ATK%". */
+const buffLabel = (k: ModKey) => (FLAT.has(k) ? modLabel(k) : modLabel(k).replace(/%$/, ''));
 export const modValueText = (k: ModKey, v: number) => (FLAT.has(k) ? `+${num(v)}` : `+${num(v)}%`);
 
 /** "Glacio DMG only", "Resonance Liberation only", "selected hits only" … */
@@ -32,7 +34,7 @@ export function valueLines(e: Effect, level: number): ValueLine[] {
   const scope = scopeText(e.appliesTo);
   const stacks = e.condition?.kind === 'stacks';
   return e.mods.map((m) => {
-    const label = modLabel(m.key);
+    const label = buffLabel(m.key);
     if (m.byStacks) {
       const now = m.byStacks[Math.min(level, m.byStacks.length - 1)];
       const max = Math.max(...m.byStacks);

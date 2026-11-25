@@ -39,13 +39,16 @@ export const SKILL_LABEL: Record<SkillKind, string> = {
 
 export const ui = {
   back: 'All Resonators',
-  tabs: { overview: 'Overview', weapon: 'Weapon', skills: 'Skills', sequences: 'Sequences', buffs: 'Buffs' },
+  tabs: { overview: 'Overview', weapon: 'Weapon', echoes: 'Echoes', skills: 'Skills', sequences: 'Sequences', team: 'Team', buffs: 'Buffs', enemy: 'Enemy' },
   damage: 'Damage',
   average: 'Average',
+  avg: 'Avg',
+  critHit: 'Crit hit',
+  showAverage: 'Show average instead of crit',
   crit: 'Crit',
   nonCrit: 'Non-crit',
   perHit: 'per hit',
-  enemy: (name: string, lv: number) => `vs ${name} · Lv ${lv}`,
+  enemy: (lv: number) => `vs Lv ${lv} enemy`,
   setAll10: 'Set all to Lv 10',
   level: 'Lv',
   rank: 'Rank',

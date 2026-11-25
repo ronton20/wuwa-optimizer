@@ -30,6 +30,11 @@ export const BUILDS: GoldenBuild[] = [
     build: {
       characterId: char('Hiyuki'), sequence: 6, skillLevels: {}, conditions: {},
       weapon: { id: weapon('Frostburn'), rank: 5 },
+      // her team from the Tower of Adversity notes (data.txt); gear buffs typed as listed there
+      team: [
+        { characterId: char('Lucilla'), sequence: 0, weapon: { id: weapon('Freeze Frame'), rank: 1 }, mainEcho: 'Glommoth', set: 'Wishes of Quiet Snowfall', custom: [] },
+        { characterId: char('Suisui'), sequence: 0, custom: [{ key: 'atkPct', value: 25, label: 'Sonata set' }] },
+      ],
       echoes: [
         echo('Reminiscence: Threnodian - Voidborne Construct', WQS, ['critDmg', 44], [['critRate', 8.7], ['energyRegen', 9.2], ['dmgLib', 9.4], ['dmgSkill', 7.9], ['critDmg', 15.0]]),
         echo('Glommoth', WQS, ['dmgGlacio', 30], [['critRate', 6.9], ['critDmg', 17.4], ['def', 60], ['energyRegen', 10.8], ['atkPct', 7.9]]),
