@@ -6,7 +6,8 @@ import { ElementGlyph } from './ElementGlyph';
 import { t } from '../../strings/en';
 
 export function CharacterCard({ c, index }: { c: Character; index: number }) {
-  const [imgOk, setImgOk] = useState(true);
+  const src = img(`char:${c.id}`);
+  const [imgOk, setImgOk] = useState(Boolean(src));
   const color = ELEMENT_COLOR[c.element];
   const hits = c.skills.reduce((n, s) => n + s.rows.filter((r) => r.hits).length, 0);
   const scaling = c.skills.flatMap((s) => s.rows).find((r) => r.hits)?.hits?.[0].scaling ?? 'atk';
@@ -28,7 +29,7 @@ export function CharacterCard({ c, index }: { c: Character; index: number }) {
 
       <div className="relative flex h-56 items-end justify-center">
         {imgOk ? (
-          <img src={img(c.images.icon)} alt={c.name} onError={() => setImgOk(false)} className="h-48 w-48 object-contain drop-shadow-[0_8px_24px_rgba(0,0,0,0.5)]" />
+          <img src={src} alt={c.name} onError={() => setImgOk(false)} className="h-48 w-48 rounded-2xl object-cover [mask-image:linear-gradient(to_bottom,black_65%,transparent)]" />
         ) : (
           <div
             className="mb-6 flex h-32 w-32 rotate-45 items-center justify-center rounded-2xl border"
