@@ -1,4 +1,5 @@
 import type { Element } from '../data/types';
+import manifest from '../data/images.json';
 
 export const ELEMENT_COLOR: Record<Element, string> = {
   Glacio: 'var(--color-glacio)',
@@ -10,12 +11,13 @@ export const ELEMENT_COLOR: Record<Element, string> = {
   Physical: 'var(--color-physical)',
 };
 
+export type ImageKey = `char:${number}` | `weapon:${number}` | `echo:${number}` | `sonata:${number}`;
+
 /**
- * Local path of a mirrored game image (see scripts/data/images.ts).
- * Game paths look like /Game/Aki/UI/UIResources/Common/Image/IconRoleHead256/T_IconRoleHead256_1_UI
+ * URL of a mirrored image, or '' when it was never downloaded (see scripts/data/images.ts).
+ * Only images listed in src/data/images.json are ever requested, so there are no 404s.
  */
-export function img(gamePath: string): string {
-  if (!gamePath) return '';
-  const file = gamePath.split('/').pop();
-  return `${import.meta.env.BASE_URL}img/${file}.webp`;
+export function img(key: ImageKey): string {
+  const path = (manifest as Record<string, string>)[key];
+  return path ? `${import.meta.env.BASE_URL}${path}` : '';
 }
