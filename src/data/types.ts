@@ -79,6 +79,8 @@ export interface Weapon {
   substat: StatValue;
   passive: { name: string; descriptions: string[] /* R1..R5 */ };
   icon: string;
+  /** 732x392 artwork */
+  iconBig: string;
 }
 
 export interface Echo {
@@ -88,6 +90,8 @@ export interface Echo {
   sets: number[];
   skill: { description: string; cooldown?: number };
   icon: string;
+  /** 732x392 artwork */
+  iconBig: string;
 }
 
 export interface SonataPiece { pieces: number; description: string; stats: StatValue[]; buffIds: number[] }

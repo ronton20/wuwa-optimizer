@@ -11,7 +11,7 @@ export const ELEMENT_COLOR: Record<Element, string> = {
   Physical: 'var(--color-physical)',
 };
 
-export type ImageKey = `char:${number}` | `weapon:${number}` | `echo:${number}` | `sonata:${number}`;
+export type ImageKey = `char:${number}` | `charArt:${number}` | `weapon:${number}` | `echo:${number}` | `sonata:${number}`;
 
 /**
  * URL of a mirrored image, or '' when it was never downloaded (see scripts/data/images.ts).

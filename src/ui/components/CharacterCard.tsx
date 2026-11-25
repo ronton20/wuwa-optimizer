@@ -6,7 +6,8 @@ import { ElementGlyph } from './ElementGlyph';
 import { t } from '../../strings/en';
 
 export function CharacterCard({ c, index }: { c: Character; index: number }) {
-  const src = img(`char:${c.id}`);
+  const art = img(`charArt:${c.id}`);
+  const src = art || img(`char:${c.id}`);
   const [imgOk, setImgOk] = useState(Boolean(src));
   const color = ELEMENT_COLOR[c.element];
   const hits = c.skills.reduce((n, s) => n + s.rows.filter((r) => r.hits).length, 0);
@@ -27,8 +28,15 @@ export function CharacterCard({ c, index }: { c: Character; index: number }) {
         style={{ background: `radial-gradient(ellipse at 50% 0%, color-mix(in oklab, ${color} 45%, transparent), transparent 70%)` }}
       />
 
-      <div className="relative flex h-56 items-end justify-center">
-        {imgOk ? (
+      <div className={`relative flex items-end justify-center ${art ? 'h-72' : 'h-56'}`}>
+        {imgOk && art ? (
+          <img
+            src={src}
+            alt={c.name}
+            onError={() => setImgOk(false)}
+            className="absolute inset-0 h-full w-full object-cover object-top transition-transform duration-500 group-hover:scale-[1.04] [mask-image:linear-gradient(to_bottom,black_70%,transparent)]"
+          />
+        ) : imgOk ? (
           <img src={src} alt={c.name} onError={() => setImgOk(false)} className="h-48 w-48 rounded-2xl object-cover [mask-image:linear-gradient(to_bottom,black_65%,transparent)]" />
         ) : (
           <div

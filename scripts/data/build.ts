@@ -215,6 +215,7 @@ const weapons: Weapon[] = load<any[]>('BinData/weapon/weaponconf.json')
         descriptions: [0, 1, 2, 3, 4].map((r) => rich(T(w.Desc), params.map((p) => p[r] ?? p[0]))),
       },
       icon: asset(w.Icon),
+      iconBig: asset(w.IconBig),
     };
   })
   .sort((a, b) => b.rarity - a.rarity || a.name.localeCompare(b.name));
@@ -234,6 +235,7 @@ for (const p of load<any[]>('BinData/phantom/phantomitem.json')) {
     sets: p.FetterGroup ?? [],
     skill: { description: sk ? rich(T(sk.DescriptionEx), lastLevel) : '', cooldown: sk?.SkillCD },
     icon: asset(p.Icon),
+    iconBig: asset(p.IconBig),
   });
 }
 const echoes = [...echoesById.values()].filter((e) => e.name && !e.name.startsWith('MonsterInfo_')).sort((a, b) => b.cost - a.cost || a.name.localeCompare(b.name));
