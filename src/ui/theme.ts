@@ -11,6 +11,11 @@ export const ELEMENT_COLOR: Record<Element, string> = {
   Physical: 'var(--color-physical)',
 };
 
+/** Breakdown bar colours, one per source of damage. */
+export const GROUP_COLOR: Record<string, string> = {
+  base: '#5d6a86', weapon: '#e9c77b', echo: '#4fb3ff', sequence: '#c38bff', self: '#ff9d6b', team: '#5fe3b8', enemy: '#ff6b8b',
+};
+
 export type ImageKey = `char:${number}` | `charArt:${number}` | `weapon:${number}` | `echo:${number}` | `sonata:${number}`;
 
 /**

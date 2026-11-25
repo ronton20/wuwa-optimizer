@@ -27,3 +27,29 @@ export function statWeights(build: Build, data: GameData): Record<string, StatWe
   const best = Math.max(...Object.keys(data.echoStats.subRolls).map((k) => gain.get(k as StatKey) ?? 0));
   return Object.fromEntries([...gain].map(([k, g]) => [k, g <= 1e-6 ? 'none' : g >= best * 0.35 ? 'key' : 'minor']));
 }
+
+export interface RollValue { stat: StatKey; roll: number; gainPct: number; capped: boolean }
+
+/**
+ * "+1 roll of X = +Y% damage" on one damage row (summed over its hits), for every substat, best first.
+ * The roll is the average of that substat's possible roll values. Average damage is used,
+ * since that's what a roll changes (a crit hit ignores Crit. Rate). `capped` = adding gains nothing
+ * but losing a roll would cost damage (Crit. Rate at 100%).
+ */
+export function rollValues(build: Build, data: GameData, rowLabel: string): RollValue[] {
+  const row = (extra?: { key: StatKey; value: number }) =>
+    computeDamage(build, data, {
+      noBreakdown: true,
+      extra: extra && [{ id: 'probe', group: 'echo', source: 'probe', text: '', mods: [extra] }],
+    }).hits.filter((h) => h.row.label === rowLabel).reduce((a, h) => a + h.avg * h.count, 0);
+  const base = row();
+  if (!base) return [];
+  return (Object.entries(data.echoStats.subRolls) as [StatKey, number[]][])
+    .map(([stat, rolls]) => {
+      const roll = Math.round((rolls.reduce((a, v) => a + v, 0) / rolls.length) * 10) / 10;
+      const up = row({ key: stat, value: roll }) / base - 1;
+      const down = 1 - row({ key: stat, value: -roll }) / base;
+      return { stat, roll, gainPct: up * 100, capped: up <= 1e-9 && down > 1e-9 };
+    })
+    .sort((a, b) => b.gainPct - a.gainPct || Number(b.capped) - Number(a.capped));
+}

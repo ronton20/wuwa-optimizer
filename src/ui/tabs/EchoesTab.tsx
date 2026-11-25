@@ -6,8 +6,8 @@ import type { EchoPiece } from '../../engine/types';
 import { useBuild, useBuilds } from '../../state/buildStore';
 import { RichText, SectionTitle } from '../components/kit';
 import { img } from '../theme';
-import { STAT_LABEL } from '../../strings/en';
-import { statWeights, type StatWeight } from '../../engine';
+import { STAT_LABEL, ui } from '../../strings/en';
+import { computeDamage, rollValues, statWeights, type StatWeight } from '../../engine';
 import { IconSelect, toneText } from '../components/IconSelect';
 
 type Weights = Record<string, StatWeight>;
@@ -77,6 +77,8 @@ export function EchoesTab({ characterId }: { characterId: number }) {
           })}
         </div>
       </div>
+
+      <RollValues characterId={characterId} />
 
       <SonataSummary pieces={build.echoes.filter((p): p is EchoPiece => Boolean(p))} />
 
@@ -264,6 +266,38 @@ function PieceForm({ piece, echo, isMain, onChange, weights, who }: { piece: Ech
           </ul>
         </div>
       </div>
+    </div>
+  );
+}
+
+/** "+1 roll of X = +Y%" on the strongest hit, best first: which substat to chase next. */
+function RollValues({ characterId }: { characterId: number }) {
+  const build = useBuild(characterId);
+  const { row, values } = useMemo(() => {
+    const hits = computeDamage(build, data, { noBreakdown: true }).hits;
+    const sums = new Map<string, number>();
+    for (const h of hits) sums.set(h.row.label, (sums.get(h.row.label) ?? 0) + h.avg * h.count);
+    const row = [...sums].sort((a, b) => b[1] - a[1])[0]?.[0];
+    return { row, values: row ? rollValues(build, data, row) : [] };
+  }, [build]);
+  if (!row) return null;
+  const best = Math.max(...values.map((v) => v.gainPct), 0.0001);
+  const shown = values.filter((v) => v.gainPct > 0.005 || v.capped);
+  return (
+    <div>
+      <SectionTitle>{ui.rollTitle}</SectionTitle>
+      <p className="mb-2 text-xs text-muted">{ui.rollHint(row.replace(/ DMG$/, ''))}</p>
+      <ul className="grid gap-x-6 gap-y-1.5 sm:grid-cols-2">
+        {shown.map((v) => (
+          <li key={v.stat} className="flex items-center gap-3 text-sm">
+            <span className="w-52 shrink-0 truncate" title={STAT_LABEL[v.stat]}>{STAT_LABEL[v.stat].replace('Resonance ', '')} <span className="text-xs text-muted">+{fmt(v.stat, v.roll)}</span></span>
+            <span className="h-1.5 flex-1 overflow-hidden rounded-full bg-white/5">
+              <motion.span className="block h-full rounded-full bg-[var(--accent)]" initial={false} animate={{ width: `${(v.gainPct / best) * 100}%` }} transition={{ duration: 0.35 }} />
+            </span>
+            <span className="tabular w-16 text-right text-gold-soft">{v.capped ? <span className="text-xs text-muted">{ui.capped}</span> : `+${v.gainPct.toFixed(2)}%`}</span>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }

@@ -65,3 +65,21 @@ describe('stat weights', () => {
     expect(w('Qingxiao')).toMatchObject({ critRate: 'key', critDmg: 'key', dmgAero: 'key', hpPct: 'none' });
   });
 });
+
+import { rollValues } from '../statWeights';
+describe('roll values', () => {
+  it("rank Hiyuki's best next substats on her Liberation", () => {
+    const v = rollValues(BUILDS.find((b) => b.name === 'Hiyuki')!.build, data, 'Foreclaiming: Inward Vision DMG');
+    expect(v[0].gainPct).toBeGreaterThan(1);
+    expect(['critRate', 'critDmg', 'atkPct']).toContain(v[0].stat);
+    expect(v.find((r) => r.stat === 'hpPct')!.gainPct).toBe(0);
+  });
+  it('a capped stat is flagged, not just shown as 0', () => {
+    const v = rollValues(BUILDS.find((b) => b.name === 'Qingxiao')!.build, data, rowOf('Qingxiao'));
+    expect(v.find((r) => r.stat === 'critRate')!.capped).toBe(true);
+  });
+});
+function rowOf(name: string) {
+  const hits = computeDamage(BUILDS.find((b) => b.name === name)!.build, data, { noBreakdown: true }).hits;
+  return hits.reduce((a, h) => (h.avg * h.count > a.avg * a.count ? h : a)).row.label;
+}

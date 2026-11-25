@@ -5,14 +5,24 @@ import { StarField } from './ui/StarField';
 import { CharacterSelect } from './ui/screens/CharacterSelect';
 import { BuildScreen } from './ui/screens/BuildScreen';
 import { useBuilds } from './state/buildStore';
-import { t } from './strings/en';
+import { t, ui } from './strings/en';
+import { decodeBuild } from './state/share';
+import { DataButtons } from './ui/components/DataButtons';
 
 /** #/c/1108 <-> selected character, so the back button and links work. */
 function useHashRoute() {
   const activeId = useBuilds((s) => s.activeId);
   const select = useBuilds((s) => s.select);
+  const openShared = useBuilds((s) => s.openShared);
   useEffect(() => {
     const read = () => {
+      const share = location.hash.match(/^#\/s\/(.+)$/);
+      if (share) {
+        const b = decodeBuild(share[1], data);
+        if (b) openShared(b);
+        else { alert(ui.badLink); select(null); }
+        return;
+      }
       const m = location.hash.match(/^#\/c\/(\d+)/);
       const id = m ? Number(m[1]) : null;
       select(id && data.characters.some((c) => c.id === id) ? id : null);
@@ -20,7 +30,7 @@ function useHashRoute() {
     if (location.hash) read();
     window.addEventListener('hashchange', read);
     return () => window.removeEventListener('hashchange', read);
-  }, [select]);
+  }, [select, openShared]);
   useEffect(() => {
     const want = activeId ? `#/c/${activeId}` : '';
     if (location.hash !== want) history.pushState(null, '', want || location.pathname);
@@ -74,7 +84,7 @@ export default function App() {
           </AnimatePresence>
         </main>
 
-        <footer className="mt-12 space-y-2 text-center text-xs text-muted">
+        <footer className={`mt-12 space-y-2 text-center text-xs text-muted ${activeId ? 'mb-36 lg:mb-0' : ''}`}>
           <div className="ornament-rule mx-auto mb-4 max-w-sm" />
           <p className="tabular">{t.dataVersion(data.meta.gameVersion, data.meta.builtAt)}</p>
           <p>{t.disclaimer}</p>
@@ -83,6 +93,7 @@ export default function App() {
             <span className="opacity-40">·</span>
             <a className="hover:text-gold" href="https://buymeacoffee.com/ronton20" target="_blank" rel="noreferrer">{t.coffee}</a>
           </p>
+          <DataButtons />
         </footer>
       </div>
     </>

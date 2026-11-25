@@ -84,7 +84,6 @@ export function IconSelect({ value, options, onChange, placeholder = 'Select…'
   };
   useEffect(() => { pop.current?.querySelector(`[data-i="${active}"]`)?.scrollIntoView({ block: 'nearest' }); }, [active]);
 
-  let lastGroup: string | undefined;
   return (
     <>
       <button ref={btn} type="button" aria-label={ariaLabel} aria-haspopup="listbox" aria-expanded={open}
@@ -105,8 +104,7 @@ export function IconSelect({ value, options, onChange, placeholder = 'Select…'
           )}
           <ul className="overflow-y-auto p-1 scroll-thin" style={{ maxHeight: pos.maxH - (showSearch ? 50 : 0) }} tabIndex={showSearch ? -1 : 0} ref={(el) => { if (!showSearch) el?.focus(); }}>
             {shown.map((o, i) => {
-              const heading = o.group !== lastGroup ? o.group : undefined;
-              lastGroup = o.group;
+              const heading = i === 0 || shown[i - 1].group !== o.group ? o.group : undefined;
               return (
                 <li key={o.value}>
                   {heading && <div className="px-2 pb-1 pt-2 text-[10px] uppercase tracking-widest text-muted">{heading}</div>}

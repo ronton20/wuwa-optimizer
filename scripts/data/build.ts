@@ -239,6 +239,11 @@ for (const p of load<any[]>('BinData/phantom/phantomitem.json')) {
   });
 }
 const echoes = [...echoesById.values()].filter((e) => e.name && !e.name.startsWith('MonsterInfo_')).sort((a, b) => b.cost - a.cost || a.name.localeCompare(b.name));
+// "Phantom: X" skins drop the same sets as X in game, but the table often lists fewer for them
+for (const e of echoes) {
+  const base = e.name.startsWith('Phantom: ') && echoes.find((x) => x.name === e.name.slice('Phantom: '.length));
+  if (base) e.sets = [...new Set([...base.sets, ...e.sets])].sort((a, b) => a - b);
+}
 
 // ---------- echo main stats (5-star, +25) ----------
 const mainProp = load<any[]>('BinData/phantom/phantommainproperty.json');

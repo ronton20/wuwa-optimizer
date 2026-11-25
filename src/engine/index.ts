@@ -4,7 +4,7 @@ export { computeStats, type Stats, type Contribution, type ContributionGroup } f
 export { collectEffects, resolveEffects, conditionKey, conditionMaxes, teammateEffects } from './effects';
 export { NOT_MODELLED } from './effects/characters';
 export { DEFAULT_ENEMY, uniformRes, defMultiplier, resMultiplier } from './enemy';
-export { statWeights, type StatWeight } from './statWeights';
+export { statWeights, rollValues, type StatWeight, type RollValue } from './statWeights';
 export { SIGNATURE, signatureOf } from './signatures';
 export type { Build, EchoPiece, Effect, Enemy, Teammate } from './types';
 export { TEAM_ECHOES, TEAM_SETS, TEAM_WEAPONS, TEAM_KITS, TEAM_NOT_MODELLED, echoBaseName } from './effects/team';

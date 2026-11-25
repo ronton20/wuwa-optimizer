@@ -1,12 +1,14 @@
 import { PLAYABLE } from '../../engine';
-import { useState, type CSSProperties } from 'react';
+import { useMemo, useState, type CSSProperties } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import data from '../../data/current';
 import { useBuild, useBuilds } from '../../state/buildStore';
 import { useDamage } from '../useDamage';
 import { ELEMENT_COLOR, img } from '../theme';
 import { ElementGlyph } from '../components/ElementGlyph';
-import { DamagePanel } from './DamagePanel';
+import { DamagePanel, DamageSheet, type CompareColumn } from './DamagePanel';
+import { BuildsMenu, ShareButton, SharedBanner } from '../components/BuildsMenu';
+import { computeDamage } from '../../engine';
 import { OverviewTab } from '../tabs/OverviewTab';
 import { WeaponTab } from '../tabs/WeaponTab';
 import { SkillsTab } from '../tabs/SkillsTab';
@@ -24,7 +26,12 @@ export function BuildScreen({ characterId }: { characterId: number }) {
   const c = data.characters.find((x) => x.id === characterId)!;
   const build = useBuild(characterId);
   const result = useDamage(build);
-  const { select, undo, redo, reset, past, future } = useBuilds();
+  const { select, undo, redo, reset, past, future, saved, pinned, shared } = useBuilds();
+  // compare: pinned saved builds of this character, baseline first
+  const compare = useMemo<CompareColumn[]>(() => pinned
+    .map((id) => saved.find((s) => s.id === id))
+    .filter((s): s is NonNullable<typeof s> => !!s && s.build.characterId === characterId)
+    .map((s) => ({ id: s.id, name: s.name, hits: computeDamage(s.build, data).hits })), [pinned, saved, characterId]);
   const [tab, setTab] = useState<Tab>('overview');
   const art = img(`charArt:${c.id}`) || img(`char:${c.id}`);
   const accent = ELEMENT_COLOR[c.element];
@@ -44,14 +51,18 @@ export function BuildScreen({ characterId }: { characterId: number }) {
           <span className="text-gold">{'★'.repeat(c.rarity)}</span>
           <span className="ml-1 rounded-full border border-white/15 px-2 py-0.5 text-xs text-muted">S{build.sequence}</span>
         </div>
-        <div className="ml-auto flex gap-2">
+        <div className="ml-auto flex flex-wrap justify-end gap-2">
+          <BuildsMenu characterId={characterId} />
+          <ShareButton characterId={characterId} />
           <IconBtn label={ui.undo} disabled={!past.length} onClick={undo}>↶</IconBtn>
           <IconBtn label={ui.redo} disabled={!future.length} onClick={redo}>↷</IconBtn>
           <IconBtn label={ui.reset} onClick={() => reset(characterId)}>⟲</IconBtn>
         </div>
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-[64px_minmax(0,1fr)_380px]">
+      {shared?.characterId === characterId && <SharedBanner />}
+
+      <div className="grid gap-4 pb-36 lg:grid-cols-[64px_minmax(0,1fr)_380px] lg:pb-0">
         {/* character rail */}
         <nav aria-label="Resonators" className="flex gap-3 lg:flex-col">
           {PLAYABLE.map((x) => {
@@ -83,7 +94,7 @@ export function BuildScreen({ characterId }: { characterId: number }) {
             </div>
           )}
 
-          <div role="tablist" className="relative z-10 flex gap-1 overflow-x-auto border-b border-white/10 px-3 pt-3 scroll-thin">
+          <div role="tablist" aria-label="Build sections" className="relative z-10 hidden gap-1 overflow-x-auto border-b border-white/10 px-3 pt-3 scroll-thin lg:flex">
             {TABS.map((k) => (
               <button key={k} role="tab" aria-selected={tab === k} onClick={() => setTab(k)}
                 className={`relative whitespace-nowrap px-4 py-2.5 font-display text-sm tracking-wider transition-colors ${tab === k ? 'text-ink' : 'text-muted hover:text-ink'}`}>
@@ -109,8 +120,21 @@ export function BuildScreen({ characterId }: { characterId: number }) {
           </div>
         </section>
 
-        <DamagePanel hits={result.hits} enemy={enemyOf(build)} />
+        <DamagePanel hits={result.hits} enemy={enemyOf(build)} compare={compare} />
       </div>
+
+      {/* phones: damage sheet + bottom tab bar */}
+      <DamageSheet hits={result.hits} enemy={enemyOf(build)} compare={compare} />
+      <nav role="tablist" aria-label="Build sections (mobile)"
+        className="fixed inset-x-0 bottom-0 z-40 flex h-[calc(56px+env(safe-area-inset-bottom))] pb-[env(safe-area-inset-bottom)] gap-1 overflow-x-auto border-t border-white/10 bg-night-900/95 px-2 backdrop-blur-md scroll-thin lg:hidden">
+        {TABS.map((k) => (
+          <button key={k} role="tab" aria-selected={tab === k} onClick={() => { setTab(k); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+            className={`relative shrink-0 whitespace-nowrap px-3 font-display text-[13px] tracking-wide ${tab === k ? 'text-ink' : 'text-muted'}`}>
+            {ui.tabs[k]}
+            {tab === k && <motion.span layoutId="tab-underline-m" className="absolute inset-x-2 top-0 h-0.5 bg-[var(--accent)]" />}
+          </button>
+        ))}
+      </nav>
     </div>
   );
 }
