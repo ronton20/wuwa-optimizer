@@ -42,15 +42,51 @@ export function collectEffects(build: Build, data: GameData): Effect[] {
 /** The id a toggle / stack count is stored under. */
 export const conditionKey = (e: Effect) => e.condition?.key ?? e.id;
 
-/** Applies the build's toggles / stack counts. Level 0 = off, 1 = on, N = stacks. */
+/** Level of a toggle / non-stacking effect: 0 = off, 1 = on. */
+function toggleLevel(effect: Effect, conditions: Build['conditions']): number {
+  const cond = effect.condition;
+  if (!cond) return 1;
+  if (cond.kind !== 'toggle') return 0;
+  return (conditions[conditionKey(effect)] ?? cond.default) ? 1 : 0;
+}
+
+/**
+ * Current stack limit of every stack condition, after active "max stacks +N" effects.
+ * Raises in the same `exclusive` group don't add up (e.g. Cartethyia S2 and Chisa's Outro: +3 total).
+ */
+export function conditionMaxes(effects: Effect[], conditions: Build['conditions']): Record<string, number> {
+  const base: Record<string, number> = {};
+  for (const e of effects) if (e.condition?.kind === 'stacks') base[conditionKey(e)] = e.condition.max;
+  const to: Record<string, number> = {};
+  const by: Record<string, Record<string, number>> = {};
+  for (const e of effects) {
+    const r = e.raisesMax;
+    if (!r || toggleLevel(e, conditions) <= 0) continue;
+    if (r.to !== undefined) to[r.key] = Math.max(to[r.key] ?? 0, r.to);
+    if (r.by) {
+      const groups = (by[r.key] ??= {});
+      const g = r.exclusive ?? e.id;
+      groups[g] = Math.max(groups[g] ?? 0, r.by);
+    }
+  }
+  const out: Record<string, number> = {};
+  for (const [key, max] of Object.entries(base)) {
+    out[key] = Math.max(max, to[key] ?? 0) + Object.values(by[key] ?? {}).reduce((a, b) => a + b, 0);
+  }
+  return out;
+}
+
+/** Applies the build's toggles / stack counts. Level 0 = off, 1 = on, N = stacks (clamped to the current limit). */
 export function resolveEffects(effects: Effect[], conditions: Build['conditions']): ActiveEffect[] {
+  const maxes = conditionMaxes(effects, conditions);
   return effects.map((effect) => {
     const cond = effect.condition;
-    if (!cond) return { effect, level: 1 };
-    const v = conditions[conditionKey(effect)];
-    if (cond.kind === 'toggle') return { effect, level: (v ?? cond.default) ? 1 : 0 };
-    const n = typeof v === 'number' ? v : cond.default;
-    return { effect, level: Math.max(0, Math.min(cond.max, n)) };
+    if (!cond || cond.kind === 'toggle') return { effect, level: toggleLevel(effect, conditions) };
+    const key = conditionKey(effect);
+    const limit = maxes[key] ?? cond.max;
+    const v = conditions[key];
+    const n = typeof v === 'number' ? v : cond.default === 'max' ? limit : cond.default;
+    return { effect, level: Math.max(0, Math.min(limit, n)) };
   });
 }
 

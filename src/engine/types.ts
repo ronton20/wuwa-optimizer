@@ -47,6 +47,8 @@ export interface HitFilter {
   skillKinds?: SkillKind[];
   /** regex tested against the in-game Skill Detail row label */
   rows?: RegExp;
+  /** plain-words name of what `rows` matches, shown in the Buffs tab */
+  label?: string;
 }
 
 export type SourceGroup = 'weapon' | 'echo' | 'sequence' | 'self' | 'team' | 'enemy';
@@ -60,11 +62,16 @@ export interface Effect {
   text: string;
   mods: Mod[];
   /** no condition = always on (and shown on the in-game stat screen if it has no hit filter) */
-  condition?: ({ kind: 'toggle'; label: string; default: boolean } | { kind: 'stacks'; label: string; max: number; default: number }) & {
+  condition?: ({ kind: 'toggle'; label: string; default: boolean } | { kind: 'stacks'; label: string; max: number; /** 'max' = follow the current stack limit */ default: number | 'max' }) & {
     /** effects with the same key share one toggle / stack count (default: the effect id) */
     key?: string;
   };
   appliesTo?: HitFilter;
+  /**
+   * While active, raises the stack limit of another condition (by its key).
+   * `by`: adds stacks; `to`: sets a new limit. Raises sharing an `exclusive` group don't stack — the biggest wins.
+   */
+  raisesMax?: { key: string; by?: number; to?: number; exclusive?: string };
 }
 
 /** A resolved effect with its current activation level (0 = off). */
