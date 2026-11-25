@@ -1,0 +1,116 @@
+import { useState, type CSSProperties } from 'react';
+import { AnimatePresence, motion } from 'motion/react';
+import data from '../../data/current';
+import { useBuild, useBuilds } from '../../state/buildStore';
+import { useDamage } from '../useDamage';
+import { ELEMENT_COLOR, img } from '../theme';
+import { ElementGlyph } from '../components/ElementGlyph';
+import { DamagePanel } from './DamagePanel';
+import { OverviewTab } from '../tabs/OverviewTab';
+import { WeaponTab } from '../tabs/WeaponTab';
+import { SkillsTab } from '../tabs/SkillsTab';
+import { SequencesTab } from '../tabs/SequencesTab';
+import { BuffsTab } from '../tabs/BuffsTab';
+import { ui } from '../../strings/en';
+
+const TABS = ['overview', 'weapon', 'skills', 'sequences', 'buffs'] as const;
+type Tab = (typeof TABS)[number];
+
+export function BuildScreen({ characterId }: { characterId: number }) {
+  const c = data.characters.find((x) => x.id === characterId)!;
+  const build = useBuild(characterId);
+  const result = useDamage(build);
+  const { select, undo, redo, reset, past, future } = useBuilds();
+  const [tab, setTab] = useState<Tab>('overview');
+  const art = img(`charArt:${c.id}`) || img(`char:${c.id}`);
+  const accent = ELEMENT_COLOR[c.element];
+
+  return (
+    <div style={{ '--accent': accent } as CSSProperties} className="relative">
+      {/* element ambience */}
+      <div aria-hidden className="pointer-events-none fixed inset-0 -z-[5] transition-colors duration-700"
+        style={{ background: `radial-gradient(ellipse at 35% 10%, color-mix(in oklab, ${accent} 18%, transparent), transparent 60%)` }} />
+
+      {/* header */}
+      <div className="mb-4 flex flex-wrap items-center gap-3">
+        <button onClick={() => select(null)} className="rounded-full border border-white/15 px-3 py-1.5 text-sm text-muted hover:border-gold hover:text-ink">← {ui.back}</button>
+        <div className="flex items-center gap-2">
+          <ElementGlyph element={c.element} size={18} />
+          <h1 className="font-display text-2xl font-semibold tracking-wide">{c.name}</h1>
+          <span className="text-gold">{'★'.repeat(c.rarity)}</span>
+          <span className="ml-1 rounded-full border border-white/15 px-2 py-0.5 text-xs text-muted">S{build.sequence}</span>
+        </div>
+        <div className="ml-auto flex gap-2">
+          <IconBtn label={ui.undo} disabled={!past.length} onClick={undo}>↶</IconBtn>
+          <IconBtn label={ui.redo} disabled={!future.length} onClick={redo}>↷</IconBtn>
+          <IconBtn label={ui.reset} onClick={() => reset(characterId)}>⟲</IconBtn>
+        </div>
+      </div>
+
+      <div className="grid gap-4 lg:grid-cols-[64px_minmax(0,1fr)_380px]">
+        {/* character rail */}
+        <nav aria-label="Resonators" className="flex gap-3 lg:flex-col">
+          {data.characters.map((x) => {
+            const src = img(`char:${x.id}`);
+            const active = x.id === c.id;
+            return (
+              <button key={x.id} onClick={() => select(x.id)} title={x.name} aria-current={active}
+                className={`relative h-14 w-14 shrink-0 overflow-hidden rounded-full border-2 transition ${active ? 'border-[var(--accent)] shadow-[0_0_18px_var(--accent)]' : 'border-white/10 opacity-70 hover:opacity-100'}`}>
+                {src ? <img src={src} alt={x.name} className="h-full w-full object-cover" /> : <span className="font-display text-lg" style={{ color: ELEMENT_COLOR[x.element] }}>{x.name[0]}</span>}
+              </button>
+            );
+          })}
+        </nav>
+
+        {/* workbench */}
+        <section className="glass relative min-h-[640px] overflow-hidden rounded-2xl">
+          <AnimatePresence mode="wait">
+            {art && (
+              <motion.img key={c.id} src={art} alt="" aria-hidden
+                initial={{ opacity: 0, x: 40 }} animate={{ opacity: tab === 'overview' ? 0.95 : 0.22, x: 0 }} exit={{ opacity: 0 }}
+                transition={{ duration: 0.5, ease: [0.2, 0.7, 0.2, 1] }}
+                className="pointer-events-none absolute -right-6 top-0 hidden h-full max-h-[760px] w-auto object-contain object-top lg:block [mask-image:linear-gradient(to_left,black_55%,transparent),linear-gradient(to_bottom,black_75%,transparent)] [mask-composite:intersect]" />
+            )}
+          </AnimatePresence>
+
+          {art && (
+            <div className="relative h-48 overflow-hidden lg:hidden" aria-hidden>
+              <img src={art} alt="" className="h-full w-full object-cover object-[50%_15%] [mask-image:linear-gradient(to_bottom,black_55%,transparent)]" />
+            </div>
+          )}
+
+          <div role="tablist" className="relative z-10 flex gap-1 overflow-x-auto border-b border-white/10 px-3 pt-3 scroll-thin">
+            {TABS.map((k) => (
+              <button key={k} role="tab" aria-selected={tab === k} onClick={() => setTab(k)}
+                className={`relative whitespace-nowrap px-4 py-2.5 font-display text-sm tracking-wider transition-colors ${tab === k ? 'text-ink' : 'text-muted hover:text-ink'}`}>
+                {ui.tabs[k]}
+                {tab === k && <motion.span layoutId="tab-underline" className="absolute inset-x-3 -bottom-px h-0.5 bg-[var(--accent)]" />}
+              </button>
+            ))}
+          </div>
+
+          <div className="relative z-10 p-4 sm:p-6">
+            <AnimatePresence mode="wait">
+              <motion.div key={tab} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.18 }}>
+                {tab === 'overview' && <OverviewTab characterId={characterId} stats={result.stats} />}
+                {tab === 'weapon' && <WeaponTab characterId={characterId} />}
+                {tab === 'skills' && <SkillsTab characterId={characterId} />}
+                {tab === 'sequences' && <SequencesTab characterId={characterId} />}
+                {tab === 'buffs' && <BuffsTab characterId={characterId} />}
+              </motion.div>
+            </AnimatePresence>
+          </div>
+        </section>
+
+        <DamagePanel hits={result.hits} />
+      </div>
+    </div>
+  );
+}
+
+function IconBtn({ children, label, onClick, disabled }: { children: string; label: string; onClick: () => void; disabled?: boolean }) {
+  return (
+    <button title={label} aria-label={label} onClick={onClick} disabled={disabled}
+      className="h-9 w-9 rounded-full border border-white/15 text-lg leading-none hover:border-gold disabled:opacity-30">{children}</button>
+  );
+}

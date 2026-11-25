@@ -59,7 +59,7 @@ export const KITS: Record<string, KitEffect[]> = {
       condition: { kind: 'stacks', label: 'Mindlock stacks', max: 25, default: 15 }, mods: [{ key: 'amplify', value: 0, byStacks: mindlockBonus }],
       appliesTo: { rows: /^Heavy Attack - Stringblade DMG$|Ephemeral Transcendence/ } },
     { seq: 0, id: 'c.qing.mindlock.lib', group: 'self', source: 'Inherent · To Know, To Banish', text: 'Billows Beneath Heaven: 2% more DMG per Mindlock stack (+5% first 7)',
-      condition: { kind: 'stacks', label: 'Mindlock stacks', max: 25, default: 15 }, mods: [{ key: 'amplify', value: 0, byStacks: mindlockBonus }],
+      condition: { kind: 'stacks', label: 'Mindlock stacks', max: 25, default: 15, key: 'c.qing.mindlock' }, mods: [{ key: 'amplify', value: 0, byStacks: mindlockBonus }],
       appliesTo: { skillKinds: ['Liberation'] } },
     { seq: 1, id: 'c.qing.s1', group: 'sequence', source: 'S1 · Like Clouds That Meet and Drift Apart', text: 'Crit. Rate +16%', mods: [{ key: 'critRate', value: 16 }] },
     { seq: 2, id: 'c.qing.s2', group: 'sequence', source: 'S2 · Like Petals That Fall Without a Sound', text: 'Heavy Attack - Stringblade multiplier +40%',

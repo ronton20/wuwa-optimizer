@@ -16,7 +16,7 @@ const CONDITIONAL: Record<string, (s: number) => Effect[]> = {
     appliesTo: { element: 'Glacio' },
   }, {
     id: 'w.frostburn.lib', group: 'weapon', source: 'Frostburn', text: 'After applying Glacio Chafe: Resonance Liberation ignores DEF',
-    condition: { kind: 'toggle', label: 'Applied Glacio Chafe', default: true },
+    condition: { kind: 'toggle', label: 'Applied Glacio Chafe', default: true, key: 'w.frostburn.chafe' },
     mods: [{ key: 'defIgnore', value: 10 * s }],
     appliesTo: { dmgTypes: ['Liberation'] },
   }],

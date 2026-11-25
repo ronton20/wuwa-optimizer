@@ -60,7 +60,10 @@ export interface Effect {
   text: string;
   mods: Mod[];
   /** no condition = always on (and shown on the in-game stat screen if it has no hit filter) */
-  condition?: { kind: 'toggle'; label: string; default: boolean } | { kind: 'stacks'; label: string; max: number; default: number };
+  condition?: ({ kind: 'toggle'; label: string; default: boolean } | { kind: 'stacks'; label: string; max: number; default: number }) & {
+    /** effects with the same key share one toggle / stack count (default: the effect id) */
+    key?: string;
+  };
   appliesTo?: HitFilter;
 }
 

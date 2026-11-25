@@ -39,12 +39,15 @@ export function collectEffects(build: Build, data: GameData): Effect[] {
   return effects;
 }
 
+/** The id a toggle / stack count is stored under. */
+export const conditionKey = (e: Effect) => e.condition?.key ?? e.id;
+
 /** Applies the build's toggles / stack counts. Level 0 = off, 1 = on, N = stacks. */
 export function resolveEffects(effects: Effect[], conditions: Build['conditions']): ActiveEffect[] {
   return effects.map((effect) => {
     const cond = effect.condition;
     if (!cond) return { effect, level: 1 };
-    const v = conditions[effect.id];
+    const v = conditions[conditionKey(effect)];
     if (cond.kind === 'toggle') return { effect, level: (v ?? cond.default) ? 1 : 0 };
     const n = typeof v === 'number' ? v : cond.default;
     return { effect, level: Math.max(0, Math.min(cond.max, n)) };
