@@ -7,7 +7,7 @@
 import { readFileSync, writeFileSync, readdirSync, statSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import { join, resolve } from 'node:path';
-import { ROSTER } from './roster.ts';
+import { pickRoster } from './roster.ts';
 import { SUB_ROLLS } from './echoRolls.ts';
 import type {
   Character, DmgType, Echo, EchoStatTables, Element, GameData, HitTerm, Scaling, Sequence, Skill, SkillKind,
@@ -152,24 +152,24 @@ function guessType(kind: SkillKind, label: string): DmgType {
 }
 
 const unmatched: string[] = [];
-const characters: Character[] = Object.keys(ROSTER).map(Number).map((id) => {
-  const r = roleInfo.find((x) => x.Id === id);
-  if (!r) throw new Error(`Character ${id} (${ROSTER[id]}) not found in roleinfo.json`);
+const characters: Character[] = pickRoster(roleInfo, T).map((id) => {
+  const r = roleInfo.find((x) => x.Id === id)!;
+  const tree = skillTree.filter((n) => n.NodeGroup === r.SkillTreeGroupId);
   const bp = baseProps.get(r.PropertyId);
   const element = ELEMENTS[r.ElementId];
   const charSkills = skills
     .filter((s) => s.SkillGroupId === r.SkillId && SKILL_KINDS[s.SkillType])
     .sort((a, b) => a.SortIndex - b.SortIndex || a.Id - b.Id)
-    .map((s) => buildSkill(s, element, unmatched));
+    .map((s) => ({ ...buildSkill(s, element, unmatched), treeIndex: tree.find((n) => n.SkillId === s.Id)?.NodeIndex }));
 
   const sequences: Sequence[] = chain
     .filter((c) => c.GroupId === r.ResonantChainGroupId)
     .sort((a, b) => a.GroupIndex - b.GroupIndex)
     .map((c) => ({ index: c.GroupIndex, name: T(c.NodeName), description: rich(T(c.AttributesDescription), c.AttributesDescriptionParams), icon: asset(c.NodeIcon), buffIds: c.BuffIds }));
 
-  const statNodes: StatNode[] = skillTree
-    .filter((n) => n.NodeGroup === r.SkillTreeGroupId && n.NodeType === 4)
-    .map((n) => ({ id: n.Id, name: rich(T(n.PropertyNodeTitle)), stats: n.Property.map(propStat).filter(Boolean) as StatValue[], icon: asset(n.PropertyNodeIcon) }));
+  const statNodes: StatNode[] = tree
+    .filter((n) => n.NodeType === 4)
+    .map((n) => ({ id: n.Id, index: n.NodeIndex, name: rich(T(n.PropertyNodeTitle)), stats: n.Property.map(propStat).filter(Boolean) as StatValue[], icon: asset(n.PropertyNodeIcon) }));
 
   return {
     id,

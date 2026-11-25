@@ -37,7 +37,9 @@ export function collectEffects(build: Build, data: GameData): Effect[] {
   const main = first && data.echoes.find((e) => e.id === first.echoId);
   if (main) effects.push(...mainEchoEffects(main.name, c as Character));
 
-  effects.push(...characterEffects(c.name, build.sequence));
+  // inherent skills switched off in the skill tree (tree index 4/5) take their buffs with them
+  const offInherents = c.skills.filter((s) => s.kind === 'Inherent' && s.treeIndex && build.nodesOff?.includes(s.treeIndex)).map((s) => s.name);
+  effects.push(...characterEffects(c.name, build.sequence).filter((e) => !(e.source.startsWith('Inherent') && offInherents.some((n) => e.source.includes(n)))));
   effects.push(...ACCOUNT_EFFECTS);
   (build.team ?? []).forEach((t, slot) => { if (t && t.characterId !== build.characterId) effects.push(...teammateEffects(t, slot, data)); });
   return effects;

@@ -42,7 +42,7 @@ export function computeStats(build: Build, data: GameData, effects: ActiveEffect
   add('base', c.name, 'critRate', c.base.critRate);
   add('base', c.name, 'critDmg', c.base.critDmg);
   add('base', c.name, 'energyRegen', c.base.energyRegen);
-  for (const n of c.statNodes) for (const s of n.stats) add('base', `Stat node · ${n.name}`, s.stat, s.value);
+  for (const n of c.statNodes) if (!build.nodesOff?.includes(n.index)) for (const s of n.stats) add('base', `Stat node · ${n.name}`, s.stat, s.value);
   if (w) add('weapon', `${w.name} substat`, w.substat.stat, w.substat.value);
 
   // echoes

@@ -16,7 +16,8 @@ export const GROUP_COLOR: Record<string, string> = {
   base: '#5d6a86', weapon: '#e9c77b', echo: '#4fb3ff', sequence: '#c38bff', self: '#ff9d6b', team: '#5fe3b8', enemy: '#ff6b8b',
 };
 
-export type ImageKey = `char:${number}` | `charArt:${number}` | `weapon:${number}` | `echo:${number}` | `sonata:${number}`;
+export type ImageKey = `char:${number}` | `charArt:${number}` | `weapon:${number}` | `echo:${number}` | `echoHead:${number}` | `sonata:${number}`
+  | `skill:${number}` | `seq:${number}-${number}` | `node:${string}`;
 
 /**
  * URL of a mirrored image, or '' when it was never downloaded (see scripts/data/images.ts).
@@ -26,3 +27,6 @@ export function img(key: ImageKey): string {
   const path = (manifest as Record<string, string>)[key];
   return path ? `${import.meta.env.BASE_URL}${path}` : '';
 }
+
+/** Square echo picture: the 256px head (what the game and WuwaBot show), falling back to the wide art. */
+export const echoImg = (id: number) => img(`echoHead:${id}`) || img(`echo:${id}`);

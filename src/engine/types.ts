@@ -32,6 +32,8 @@ export interface Build {
   echoes: (EchoPiece | null)[];
   /** effect id -> toggle (boolean) or stack count (number). Missing = the effect's default. */
   conditions: Record<string, boolean | number>;
+  /** skill-tree nodes switched off: inherents (tree index 4, 5) and stat nodes (9-16); missing = all unlocked */
+  nodesOff?: number[];
   /** up to 2 teammates */
   team?: (Teammate | null)[];
   /** missing = Tower of Adversity default */

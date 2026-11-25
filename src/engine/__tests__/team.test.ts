@@ -83,3 +83,15 @@ function rowOf(name: string) {
   const hits = computeDamage(BUILDS.find((b) => b.name === name)!.build, data, { noBreakdown: true }).hits;
   return hits.reduce((a, h) => (h.avg * h.count > a.avg * a.count ? h : a)).row.label;
 }
+
+describe('skill tree switches', () => {
+  it("switching off Hiyuki's Fine Snow inherent removes its buffs; stat nodes leave the sheet", () => {
+    const h = BUILDS.find((b) => b.name === 'Hiyuki')!.build;
+    const fine = data.characters.find((c) => c.id === h.characterId)!.skills.find((s) => s.name === 'Fine Snow')!.treeIndex!;
+    const has = (b: typeof h) => collectEffects(b, data).some((e) => e.source === 'Inherent · Fine Snow');
+    expect(has(h)).toBe(true);
+    expect(has({ ...h, nodesOff: [fine] })).toBe(false);
+    const cr = (b: typeof h) => computeDamage(b, data, { noBreakdown: true }).stats.sheet.critRate;
+    expect(cr(h) - cr({ ...h, nodesOff: [9, 13] })).toBeCloseTo(1.2 + 2.8, 6);
+  });
+});

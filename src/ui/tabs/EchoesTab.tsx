@@ -5,10 +5,11 @@ import type { Echo, StatKey } from '../../data/types';
 import type { EchoPiece } from '../../engine/types';
 import { useBuild, useBuilds } from '../../state/buildStore';
 import { RichText, SectionTitle } from '../components/kit';
-import { img } from '../theme';
+import { echoImg, img } from '../theme';
 import { STAT_LABEL, ui } from '../../strings/en';
 import { computeDamage, rollValues, statWeights, type StatWeight } from '../../engine';
-import { IconSelect, toneText } from '../components/IconSelect';
+import { IconSelect } from '../components/IconSelect';
+import { BAND_COLOR, rollColor, rollTitle } from '../rollQuality';
 
 type Weights = Record<string, StatWeight>;
 
@@ -65,7 +66,7 @@ export function EchoesTab({ characterId }: { characterId: number }) {
         <div className="flex flex-1 flex-wrap gap-2">
           {slots.map((p, i) => {
             const e = p && echoById(p.echoId);
-            const src = p && img(`echo:${p.echoId}`);
+            const src = p && echoImg(p.echoId);
             return (
               <button key={i} onClick={() => setSlot(i)} aria-pressed={slot === i}
                 className={`relative h-24 w-24 overflow-hidden rounded-xl border-2 bg-black/30 transition ${slot === i ? 'border-[var(--accent)] shadow-[0_0_14px_var(--accent)]' : 'border-white/10 hover:border-white/30'}`}>
@@ -181,7 +182,7 @@ function EchoPicker({ costLeft, onPick }: { costLeft: number; onPick: (e: Echo) 
               <button disabled={tooMuch} onClick={() => onPick(e)} title={tooMuch ? `Not enough cost left (${costLeft})` : e.name}
                 className="group w-full rounded-lg border border-white/10 bg-black/20 p-1 text-left transition hover:border-[var(--accent)] disabled:cursor-not-allowed disabled:opacity-30">
                 <div className="relative">
-                  {img(`echo:${e.id}`) ? <img src={img(`echo:${e.id}`)} alt="" loading="lazy" className="aspect-square w-full rounded object-cover" /> : <div className="aspect-square" />}
+                  {echoImg(e.id) ? <img src={echoImg(e.id)} alt="" loading="lazy" className="aspect-square w-full rounded object-cover" /> : <div className="aspect-square" />}
                   <span className="absolute right-1 top-0.5 rounded bg-black/60 px-1 text-[11px] font-semibold text-gold">{e.cost}</span>
                 </div>
                 <div className="mt-1 truncate text-[11px]">{e.name}</div>
@@ -210,7 +211,7 @@ function PieceForm({ piece, echo, isMain, onChange, weights, who }: { piece: Ech
   return (
     <div className="grid gap-5 md:grid-cols-[180px_minmax(0,1fr)]">
       <div>
-        {img(`echo:${echo.id}`) && <img src={img(`echo:${echo.id}`)} alt="" className="w-full rounded-lg" />}
+        {echoImg(echo.id) && <img src={echoImg(echo.id)} alt="" className="w-full rounded-lg" />}
         <div className="mt-2 font-display">{echo.name}</div>
         <div className="text-xs text-muted">Cost {echo.cost} · +25</div>
         {isMain && echo.skill.description && (
@@ -246,7 +247,8 @@ function PieceForm({ piece, echo, isMain, onChange, weights, who }: { piece: Ech
         <div>
           <div className="mb-1 flex flex-wrap items-baseline justify-between gap-x-3 text-xs">
             <span className="uppercase tracking-wider text-muted">Substats</span>
-            <span className="text-muted"><span className="text-gold-soft"><span className="text-[9px] text-gold">◆</span> worth it for {who}</span> · <span className="opacity-50">faded = no damage gain</span></span>
+            <span className="text-muted"><span className="text-gold-soft"><span className="text-[9px] text-gold">◆</span> worth it for {who}</span> · <span className="opacity-50">faded = no damage gain</span>
+              <span className="ml-2 inline-flex items-center gap-1" title="Roll quality: low, mid, high, top">{BAND_COLOR.map((c) => <span key={c} className="h-2 w-2 rounded-full" style={{ background: c }} />)} roll</span></span>
           </div>
           <ul className="space-y-1.5">
             {subs.map((s, i) => {
@@ -257,8 +259,9 @@ function PieceForm({ piece, echo, isMain, onChange, weights, who }: { piece: Ech
                     options={[{ value: '', label: '— empty —' }, ...subKeys.map((k) => ({ value: k, label: `${STAT_LABEL[k]}${FLAT.has(k) ? ' (flat)' : ''}`, tone: weights[k], disabled: used.has(k), hint: used.has(k) ? 'in use' : undefined }))]}
                     onChange={(v) => setSub(i, v ? { stat: v as StatKey, value: rolls[v as StatKey]![0] } : null)} />
                   <select disabled={!s} value={s?.value ?? ''} onChange={(e) => s && setSub(i, { ...s, value: Number(e.target.value) })}
-                    className={`tabular w-24 rounded-lg border border-white/10 bg-night-900 px-2 py-1.5 text-right text-sm disabled:opacity-40 ${s ? toneText(weights[s.stat]) : ''}`}>
-                    {s && rolls[s.stat]!.map((v) => <option key={v} value={v}>{fmt(s.stat, v)}</option>)}
+                    title={s ? rollTitle(s.stat, s.value) : undefined} style={s ? { color: rollColor(s.stat, s.value), borderColor: rollColor(s.stat, s.value) + '66' } : undefined}
+                    className="tabular w-24 rounded-lg border border-white/10 bg-night-900 px-2 py-1.5 text-right text-sm font-semibold disabled:opacity-40">
+                    {s && rolls[s.stat]!.map((v) => <option key={v} value={v} style={{ color: rollColor(s.stat, v) }}>{fmt(s.stat, v)}</option>)}
                   </select>
                 </li>
               );

@@ -1,5 +1,5 @@
 import data from '../../data/current';
-import { collectEffects, conditionKey, conditionMaxes, NOT_MODELLED, resolveEffects } from '../../engine';
+import { collectEffects, conditionKey, conditionMaxes, hasKit, NOT_MODELLED, resolveEffects } from '../../engine';
 import type { Effect } from '../../engine/types';
 import { useBuild, useBuilds } from '../../state/buildStore';
 import { SectionTitle, Stepper, Toggle } from '../components/kit';
@@ -40,6 +40,7 @@ export function BuffsTab({ characterId }: { characterId: number }) {
   return (
     <div className="max-w-2xl space-y-6">
       <p className="text-sm text-muted">{ui.buffsHint}</p>
+      {!hasKit(c.name) && <p className="rounded-lg border border-[var(--accent)]/40 bg-[color-mix(in_oklab,var(--accent)_10%,transparent)] px-4 py-3 text-sm">{ui.kitNotModelled(c.name)}</p>}
       {ORDER.map((section) => {
         const list = [...rows.values()].filter((r) => sectionOf(r.first) === section);
         if (!list.length) return null;

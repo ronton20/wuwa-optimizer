@@ -7,8 +7,14 @@ const S = () => useBuilds.getState();
 describe('saved builds, compare pins and shared copies', () => {
   beforeEach(() => S().importAll({}));
 
+  it('a new character starts empty: S0, signature weapon at R1, no echoes', () => {
+    const b = defaultBuild(HIYUKI);
+    expect(b).toMatchObject({ sequence: 0, weapon: { rank: 1 }, echoes: [] });
+    expect(b.team).toBeUndefined();
+  });
+
   it('saves a copy that later edits do not change', () => {
-    const id = S().saveAs('Crit set', defaultBuild(HIYUKI));
+    const id = S().saveAs('Crit set', { ...defaultBuild(HIYUKI), sequence: 6 });
     S().update(HIYUKI, (b) => ({ ...b, sequence: 0 }));
     expect(S().saved.find((s) => s.id === id)!.build.sequence).toBe(6);
   });

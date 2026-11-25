@@ -1,13 +1,13 @@
-import { PLAYABLE } from '../../engine';
 import { useMemo, useState, type CSSProperties } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import data from '../../data/current';
-import { useBuild, useBuilds } from '../../state/buildStore';
+import { useBuild, useBuilds, useMyCharacters } from '../../state/buildStore';
 import { useDamage } from '../useDamage';
 import { ELEMENT_COLOR, img } from '../theme';
 import { ElementGlyph } from '../components/ElementGlyph';
 import { DamagePanel, DamageSheet, type CompareColumn } from './DamagePanel';
 import { BuildsMenu, ShareButton, SharedBanner } from '../components/BuildsMenu';
+import { ImportCard } from '../import/ImportCard';
 import { computeDamage } from '../../engine';
 import { OverviewTab } from '../tabs/OverviewTab';
 import { WeaponTab } from '../tabs/WeaponTab';
@@ -27,6 +27,9 @@ export function BuildScreen({ characterId }: { characterId: number }) {
   const build = useBuild(characterId);
   const result = useDamage(build);
   const { select, undo, redo, reset, past, future, saved, pinned, shared } = useBuilds();
+  // rail: characters you've built, plus the one open now
+  const mine = useMyCharacters();
+  const rail = [...new Set([...mine, characterId])].map((id) => data.characters.find((x) => x.id === id)!).filter(Boolean);
   // compare: pinned saved builds of this character, baseline first
   const compare = useMemo<CompareColumn[]>(() => pinned
     .map((id) => saved.find((s) => s.id === id))
@@ -52,6 +55,7 @@ export function BuildScreen({ characterId }: { characterId: number }) {
           <span className="ml-1 rounded-full border border-white/15 px-2 py-0.5 text-xs text-muted">S{build.sequence}</span>
         </div>
         <div className="ml-auto flex flex-wrap justify-end gap-2">
+          <ImportCard compact />
           <BuildsMenu characterId={characterId} />
           <ShareButton characterId={characterId} />
           <IconBtn label={ui.undo} disabled={!past.length} onClick={undo}>↶</IconBtn>
@@ -64,8 +68,8 @@ export function BuildScreen({ characterId }: { characterId: number }) {
 
       <div className="grid gap-4 pb-36 lg:grid-cols-[64px_minmax(0,1fr)_380px] lg:pb-0">
         {/* character rail */}
-        <nav aria-label="Resonators" className="flex gap-3 lg:flex-col">
-          {PLAYABLE.map((x) => {
+        <nav aria-label="Resonators" className="flex gap-3 overflow-x-auto pb-1 lg:flex-col lg:overflow-visible lg:pb-0">
+          {rail.map((x) => {
             const src = img(`char:${x.id}`);
             const active = x.id === c.id;
             return (
@@ -75,6 +79,8 @@ export function BuildScreen({ characterId }: { characterId: number }) {
               </button>
             );
           })}
+          <button onClick={() => select(null)} title={ui.addResonator} aria-label={ui.addResonator}
+            className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full border-2 border-dashed border-white/20 text-2xl text-muted transition hover:border-gold hover:text-gold">+</button>
         </nav>
 
         {/* workbench */}
@@ -82,7 +88,7 @@ export function BuildScreen({ characterId }: { characterId: number }) {
           <AnimatePresence mode="wait">
             {art && (
               <motion.img key={c.id} src={art} alt="" aria-hidden
-                initial={{ opacity: 0, x: 40 }} animate={{ opacity: tab === 'overview' ? 0.95 : 0.22, x: 0 }} exit={{ opacity: 0 }}
+                initial={{ opacity: 0, x: 40 }} animate={{ opacity: tab === 'overview' ? 0.3 : 0.18, x: 0 }} exit={{ opacity: 0 }}
                 transition={{ duration: 0.5, ease: [0.2, 0.7, 0.2, 1] }}
                 className="pointer-events-none absolute -right-6 top-0 hidden h-full max-h-[760px] w-auto object-contain object-top lg:block [mask-image:linear-gradient(to_left,black_55%,transparent),linear-gradient(to_bottom,black_75%,transparent)] [mask-composite:intersect]" />
             )}
@@ -94,12 +100,12 @@ export function BuildScreen({ characterId }: { characterId: number }) {
             </div>
           )}
 
-          <div role="tablist" aria-label="Build sections" className="relative z-10 hidden gap-1 overflow-x-auto border-b border-white/10 px-3 pt-3 scroll-thin lg:flex">
+          <div role="tablist" aria-label="Build sections" className="relative z-10 hidden gap-1 overflow-x-auto overflow-y-hidden border-b border-white/10 px-3 pt-3 scroll-thin lg:flex">
             {TABS.map((k) => (
               <button key={k} role="tab" aria-selected={tab === k} onClick={() => setTab(k)}
                 className={`relative whitespace-nowrap px-4 py-2.5 font-display text-sm tracking-wider transition-colors ${tab === k ? 'text-ink' : 'text-muted hover:text-ink'}`}>
                 {ui.tabs[k]}
-                {tab === k && <motion.span layoutId="tab-underline" className="absolute inset-x-3 -bottom-px h-0.5 bg-[var(--accent)]" />}
+                {tab === k && <motion.span layoutId="tab-underline" className="absolute inset-x-3 bottom-0 h-0.5 bg-[var(--accent)]" />}
               </button>
             ))}
           </div>
@@ -126,7 +132,7 @@ export function BuildScreen({ characterId }: { characterId: number }) {
       {/* phones: damage sheet + bottom tab bar */}
       <DamageSheet hits={result.hits} enemy={enemyOf(build)} compare={compare} />
       <nav role="tablist" aria-label="Build sections (mobile)"
-        className="fixed inset-x-0 bottom-0 z-40 flex h-[calc(56px+env(safe-area-inset-bottom))] pb-[env(safe-area-inset-bottom)] gap-1 overflow-x-auto border-t border-white/10 bg-night-900/95 px-2 backdrop-blur-md scroll-thin lg:hidden">
+        className="fixed inset-x-0 bottom-0 z-40 flex h-[calc(56px+env(safe-area-inset-bottom))] pb-[env(safe-area-inset-bottom)] gap-1 overflow-x-auto overflow-y-hidden border-t border-white/10 bg-night-900/95 px-2 backdrop-blur-md scroll-thin lg:hidden">
         {TABS.map((k) => (
           <button key={k} role="tab" aria-selected={tab === k} onClick={() => { setTab(k); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
             className={`relative shrink-0 whitespace-nowrap px-3 font-display text-[13px] tracking-wide ${tab === k ? 'text-ink' : 'text-muted'}`}>

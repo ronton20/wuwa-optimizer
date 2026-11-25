@@ -6,7 +6,7 @@ import { IconSelect, type SelectOption } from '../components/IconSelect';
 import type { ModKey, Teammate } from '../../engine/types';
 import { useBuild, useBuilds } from '../../state/buildStore';
 import { Pips, SectionTitle } from '../components/kit';
-import { ELEMENT_COLOR, img } from '../theme';
+import { ELEMENT_COLOR, echoImg, img } from '../theme';
 import { modLabel, valueLines } from '../effectText';
 
 const NONE = '';
@@ -27,7 +27,7 @@ function weaponOptions(c: Character): SelectOption[] {
 const ECHO_OPTIONS: SelectOption[] = (() => {
   const seen = new Set<string>();
   const all = data.echoes.filter((e) => e.sets.length && !seen.has(echoBaseName(e.name)) && seen.add(echoBaseName(e.name)));
-  const opt = (e: (typeof all)[number], group: string) => ({ value: echoBaseName(e.name), label: echoBaseName(e.name), icon: img(`echo:${e.id}`), hint: `Cost ${e.cost}`, group });
+  const opt = (e: (typeof all)[number], group: string) => ({ value: echoBaseName(e.name), label: echoBaseName(e.name), icon: echoImg(e.id), hint: `Cost ${e.cost}`, group });
   return [
     { value: NONE, label: '— none —' },
     ...all.filter((e) => TEAM_ECHOES[echoBaseName(e.name)]).map((e) => opt(e, 'Buffs the team')),
@@ -75,7 +75,7 @@ export function TeamTab({ characterId }: { characterId: number }) {
 }
 
 function SlotCard({ slot, t, self, other, onChange }: { slot: number; t: Teammate | null; self: number; other?: number; onChange: (t: Teammate | null) => void }) {
-  const choices = data.characters.filter((c) => c.id !== self && c.id !== other);
+  const choices = data.characters.filter((c) => c.id !== self && c.id !== other).sort((a, b) => b.rarity - a.rarity || a.name.localeCompare(b.name));
   const c = t && data.characters.find((x) => x.id === t.characterId);
   const effects = t ? teammateEffects(t, slot, data) : [];
 
@@ -85,13 +85,19 @@ function SlotCard({ slot, t, self, other, onChange }: { slot: number; t: Teammat
         {`Teammate ${slot + 1}${c ? ` (${c.name})` : ''}`}
       </SectionTitle>
 
-      <div className="mb-4 flex flex-wrap gap-2">
-        {choices.map((x) => (
-          <button key={x.id} title={x.name} onClick={() => { if (t?.characterId === x.id) return; const sig = signatureOf(x.name, data); onChange({ characterId: x.id, sequence: 0, weapon: sig && { id: sig.id, rank: 1 }, custom: [] }); }} aria-pressed={t?.characterId === x.id}
-            className={`h-12 w-12 overflow-hidden rounded-full border-2 ${t?.characterId === x.id ? 'border-[var(--accent)]' : 'border-white/10 opacity-70 hover:opacity-100'}`}>
-            {img(`char:${x.id}`) ? <img src={img(`char:${x.id}`)} alt={x.name} className="h-full w-full object-cover" /> : <span style={{ color: ELEMENT_COLOR[x.element] }}>{x.name[0]}</span>}
-          </button>
-        ))}
+      <div className="mb-4 flex items-center gap-3">
+        {c && (img(`char:${c.id}`)
+          ? <img src={img(`char:${c.id}`)} alt="" className="h-12 w-12 shrink-0 rounded-full border-2 border-[var(--accent)] object-cover" />
+          : <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border-2 border-[var(--accent)] font-display" style={{ color: ELEMENT_COLOR[c.element] }}>{c.name[0]}</span>)}
+        <IconSelect ariaLabel={`Teammate ${slot + 1}`} className="flex-1" iconShape="round" searchable placeholder="Search a Resonator…"
+          value={t ? String(t.characterId) : ''}
+          options={choices.map((x) => ({ value: String(x.id), label: x.name, icon: img(`char:${x.id}`), hint: x.element, group: `${x.rarity}★` }))}
+          onChange={(v) => {
+            const x = data.characters.find((y) => y.id === Number(v));
+            if (!x || t?.characterId === x.id) return;
+            const sig = signatureOf(x.name, data);
+            onChange({ characterId: x.id, sequence: 0, weapon: sig && { id: sig.id, rank: 1 }, custom: [] });
+          }} />
       </div>
 
       {t && c && (

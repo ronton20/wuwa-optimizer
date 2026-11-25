@@ -50,10 +50,13 @@ export interface Skill {
   icon: string;
   maxLevel: number;
   rows: SkillRow[];
+  /** position in the in-game skill tree (1 Normal, 2 Skill, 3 Liberation, 4/5 inherents, 6 Intro, 7 Forte, 8 Outro) */
+  treeIndex?: number;
 }
 
 export interface Sequence { index: number; name: string; description: string; icon: string; buffIds: number[] }
-export interface StatNode { id: number; name: string; stats: StatValue[]; icon: string }
+/** Stat bonus node in the skill tree. index 9-12 = first row above Normal/Skill/Liberation/Intro, 13-16 = second row. */
+export interface StatNode { id: number; index: number; name: string; stats: StatValue[]; icon: string }
 
 export interface Character {
   id: number;

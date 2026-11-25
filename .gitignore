@@ -25,3 +25,8 @@ dist-ssr
 
 .cache/
 public/img/
+
+# WuwaBot cards used by the import tests (they show your UID, keep them out of the public repo)
+tests-support/cards/
+# OCR files copied from node_modules at build time
+public/ocr/

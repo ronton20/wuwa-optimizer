@@ -20,6 +20,7 @@ type Packed = [
   [string, boolean | number][], // conditions
   ([number, number, number, number, string, string, [string, number, string][]] | 0)[] | 0, // team (0 = never set)
   [number, number[]] | 0, // enemy: level, RES in ELEMENTS order
+  number[]?, // stat nodes switched off (optional: older links don't have it)
 ];
 
 export function encodeBuild(b: Build): string {
@@ -32,7 +33,8 @@ export function encodeBuild(b: Build): string {
     Object.entries(b.conditions),
     b.team === undefined ? 0 : b.team.map((t) => (t ? [t.characterId, t.sequence, t.weapon?.id ?? 0, t.weapon?.rank ?? 1, t.mainEcho ?? '', t.set ?? '', t.custom.map((c) => [c.key, c.value, c.label])] : 0)),
     b.enemy ? [b.enemy.level, ELEMENTS.map((e) => b.enemy!.res[e] ?? 0)] : 0,
-  ];
+    ...(b.nodesOff?.length ? [b.nodesOff] : []),
+  ] as Packed;
   return VERSION + compressToEncodedURIComponent(JSON.stringify(packed));
 }
 
@@ -42,7 +44,7 @@ export function decodeBuild(code: string, data: GameData): Build | null {
     if (!code.startsWith(VERSION)) return null;
     const json = decompressFromEncodedURIComponent(code.slice(VERSION.length));
     if (!json) return null;
-    const [cid, seq, levels, [wid, rank], echoes, conditions, team, enemy] = JSON.parse(json) as Packed;
+    const [cid, seq, levels, [wid, rank], echoes, conditions, team, enemy, nodesOff] = JSON.parse(json) as Packed;
     const c = data.characters.find((x) => x.id === cid);
     if (!c || !data.weapons.some((w) => w.id === wid)) return null;
     const clamp = (n: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, Math.round(Number(n) || 0)));
@@ -72,6 +74,7 @@ export function decodeBuild(code: string, data: GameData): Build | null {
           custom: custom.map(([key, value, label]) => ({ key: key as ModKey, value: Number(value), label: String(label) })),
         };
       }),
+      ...(nodesOff?.length ? { nodesOff: nodesOff.filter((n) => n === 4 || n === 5 || (n >= 9 && n <= 16)) } : {}),
       enemy: enemy ? { level: clamp(enemy[0], 1, 150), res: { ...uniformRes(0), ...Object.fromEntries(ELEMENTS.map((e, i) => [e, Number(enemy[1][i]) || 0])) } } : undefined,
     };
   } catch {

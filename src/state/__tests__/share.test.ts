@@ -13,6 +13,7 @@ describe('share links', () => {
       skillLevels: { Liberation: 7 },
       enemy: { level: 95, res: { Glacio: 20, Fusion: 0, Electro: 0, Aero: -5, Spectro: 0, Havoc: 10, Physical: 0 } },
       conditions: { 'acct.lahairoi.bike': false },
+      nodesOff: [5, 13, 9],
     };
     const code = encodeBuild(b);
     expect(code.length).toBeLessThan(2000);

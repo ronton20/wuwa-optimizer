@@ -39,18 +39,26 @@ async function encoreCharacter(id: number): Promise<Record<string, string>> {
   } catch { return {}; }
 }
 
-interface Job { key: string; out: string; urls: string[] }
+interface Job { key: string; out: string; urls: string[]; refresh?: boolean }
 const jobs: Job[] = [];
+
+/**
+ * Encore's character entry is only used when it names the same texture as the game data (it fixes letter case,
+ * e.g. FeiXue vs Feixue). For brand-new characters it can point at someone else's art (Lily got Ciaccona's),
+ * so the game-data path always comes first and a mismatching Encore path is ignored.
+ */
+const sameTexture = (url: string | undefined, gamePath?: string) =>
+  !!url && !!gamePath && url.split('/').pop()!.replace(/\.webp$/i, '').toLowerCase() === gamePath.split('/').pop()!.split('.')[0].toLowerCase();
 
 for (const c of data.characters) {
   const e = await encoreCharacter(c.id);
+  const art = sameTexture(e.FormationRoleCard, c.images.stand) ? [e.FormationRoleCard] : [];
+  const head = sameTexture(e.RoleHeadIconLarge, c.images.icon) ? [e.RoleHeadIconLarge] : [];
+  // character pictures are re-checked on every run, so a wrong file saved earlier gets replaced
+  jobs.push({ key: `charArt:${c.id}`, out: `img/characters/${c.id}-art.webp`, refresh: true, urls: [...res(c.images.stand), ...art] });
   jobs.push({
-    key: `charArt:${c.id}`, out: `img/characters/${c.id}-art.webp`,
-    urls: [e.FormationRoleCard, ...res(c.images.stand)].filter(Boolean),
-  });
-  jobs.push({
-    key: `char:${c.id}`, out: `img/characters/${c.id}.webp`,
-    urls: [e.RoleHeadIconLarge, ...res(c.images.icon), ...names(c.name).map((n) => `${COMMUNITY}${n}.png`)].filter(Boolean),
+    key: `char:${c.id}`, out: `img/characters/${c.id}.webp`, refresh: true,
+    urls: [...res(c.images.icon), ...head, ...names(c.name).map((n) => `${COMMUNITY}${n}.png`)],
   });
 }
 for (const w of data.weapons)
@@ -58,7 +66,23 @@ for (const w of data.weapons)
 for (const e of data.echoes)
   jobs.push({ key: `echo:${e.id}`, out: `img/echoes/${e.id}.webp`, urls: [...res(e.iconBig), ...res(e.icon), ...names(e.name).map((n) => `${COMMUNITY}echoes/${n}.webp`)] });
 for (const s of data.sonatas)
-  jobs.push({ key: `sonata:${s.id}`, out: `img/sonatas/${s.id}.webp`, urls: names(s.name).map((n) => `${COMMUNITY}echoes/sets/${n}.webp`) });
+  jobs.push({ key: `sonata:${s.id}`, out: `img/sonatas/${s.id}.webp`, urls: [...res(s.icon), ...names(s.name).map((n) => `${COMMUNITY}echoes/sets/${n}.webp`)] });
+
+// square 256px echo heads: what WuwaBot cards show, used to recognise echoes when importing a card
+for (const e of data.echoes)
+  jobs.push({ key: `echoHead:${e.id}`, out: `img/echoheads/${e.id}.webp`, urls: res(e.icon) });
+
+// skill tree: skill icons, sequence icons, stat-node icons (shared between characters, keyed by file name)
+const fileName = (p: string) => p.split('/').pop()!.split('.')[0];
+const nodeIcons = new Set<string>();
+for (const c of data.characters) {
+  for (const sk of c.skills) if (sk.icon) jobs.push({ key: `skill:${sk.id}`, out: `img/skills/${sk.id}.webp`, urls: res(sk.icon) });
+  for (const q of c.sequences) if (q.icon) jobs.push({ key: `seq:${c.id}-${q.index}`, out: `img/sequences/${c.id}-${q.index}.webp`, urls: res(q.icon) });
+  for (const n of c.statNodes) if (n.icon && !nodeIcons.has(n.icon)) {
+    nodeIcons.add(n.icon);
+    jobs.push({ key: `node:${fileName(n.icon)}`, out: `img/nodes/${fileName(n.icon)}.webp`, urls: res(n.icon) });
+  }
+}
 
 const manifest: Record<string, string> = {};
 const missing: string[] = [];
@@ -68,7 +92,7 @@ const queue = [...jobs];
 async function worker() {
   for (let job = queue.shift(); job; job = queue.shift()) {
     const file = resolve(PUBLIC, job.out);
-    if (existsSync(file)) { manifest[job.key] = job.out; continue; }
+    if (existsSync(file) && !job.refresh) { manifest[job.key] = job.out; continue; }
     let found = false;
     for (const url of job.urls) {
       try {
@@ -83,11 +107,12 @@ async function worker() {
         found = true; break;
       } catch { /* network error: try next source */ }
     }
-    if (!found) missing.push(job.key);
+    if (!found && existsSync(file)) manifest[job.key] = job.out; // offline: keep what we have
+    else if (!found) missing.push(job.key);
   }
 }
 
-await Promise.all(Array.from({ length: 8 }, worker));
+await Promise.all(Array.from({ length: 12 }, worker));
 const sorted = Object.fromEntries(Object.entries(manifest).sort(([a], [b]) => a.localeCompare(b)));
 writeFileSync(MANIFEST, JSON.stringify(sorted, null, 1) + '\n');
 console.log(`Images: ${Object.keys(manifest).length}/${jobs.length} available. Downloaded now: ${JSON.stringify(fromSource)}`);

@@ -1,15 +1,13 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import data from '../data/current';
-import { BUILDS } from '../data/presets';
+import { signatureOf } from '../engine/signatures';
 import type { Build } from '../engine/types';
 
-/** Starting build: the user's own build for the 4 launch characters, otherwise their best weapon and no echoes. */
+/** Starting build for a character nobody has built yet: S0, signature weapon (or a 5★ of its type) at R1, no echoes. */
 export function defaultBuild(characterId: number): Build {
-  const preset = BUILDS.find((b) => b.build.characterId === characterId);
-  if (preset) return structuredClone(preset.build);
   const c = data.characters.find((x) => x.id === characterId)!;
-  const w = data.weapons.find((x) => x.type === c.weaponType && x.rarity === 5) ?? data.weapons.find((x) => x.type === c.weaponType)!;
+  const w = signatureOf(c.name, data) ?? data.weapons.find((x) => x.type === c.weaponType && x.rarity === 5) ?? data.weapons.find((x) => x.type === c.weaponType)!;
   return { characterId, sequence: 0, skillLevels: {}, weapon: { id: w.id, rank: 1 }, echoes: [], conditions: {} };
 }
 
@@ -125,6 +123,13 @@ export const useBuilds = create<State>()(
 /** Current build of a character, live (the shared copy while one is open). */
 export const useBuild = (id: number) =>
   useBuilds((s) => (s.shared?.characterId === id ? s.shared : s.builds[id])) ?? defaultBuild(id);
+
+/** Characters the user has done something with: a live build or a saved one, in that order. */
+export const useMyCharacters = () => {
+  const builds = useBuilds((s) => s.builds);
+  const saved = useBuilds((s) => s.saved);
+  return [...new Set([...Object.keys(builds).map(Number), ...saved.map((x) => x.build.characterId)])];
+};
 
 /** Saved builds of one character. */
 export const useSavedFor = (id: number) => {

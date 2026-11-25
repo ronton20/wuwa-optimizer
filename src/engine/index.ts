@@ -11,5 +11,7 @@ export { TEAM_ECHOES, TEAM_SETS, TEAM_WEAPONS, TEAM_KITS, TEAM_NOT_MODELLED, ech
 
 import data from '../data/current';
 import { KITS } from './effects/characters';
-/** Characters whose own kit is modelled (teammate-only characters are left out of the roster). */
-export const PLAYABLE = data.characters.filter((c) => KITS[c.name]);
+/** Every playable Resonator. */
+export const PLAYABLE = data.characters;
+/** True when a character's own conditional buffs (inherents, Forte, sequences) are modelled. */
+export const hasKit = (name: string) => Boolean(KITS[name]);

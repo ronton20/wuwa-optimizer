@@ -1,8 +1,8 @@
 // WuWa Build Optimizer service worker: makes the app installable and usable offline.
 // - pages: network first, cached copy when offline (so new deploys show up right away)
-// - built files (/assets/, hashed names) and mirrored images (/img/): cache first
+// - built files (/assets/, hashed names), mirrored images (/img/) and the OCR engine (/ocr/): cache first
 // - fonts and everything else: cached copy at once, refreshed in the background
-const VERSION = 'v1';
+const VERSION = 'v2';
 const CACHE = `wuwa-optimizer-${VERSION}`;
 const SCOPE = new URL(self.registration.scope);
 const INDEX = new URL('./', SCOPE).href;
@@ -61,7 +61,7 @@ self.addEventListener('fetch', (event) => {
   const url = new URL(req.url);
   if (req.mode === 'navigate' && url.href.startsWith(SCOPE.href)) return event.respondWith(networkFirstPage(req));
   if (url.origin === SCOPE.origin) {
-    if (url.pathname.includes('/assets/') || url.pathname.includes('/img/')) return event.respondWith(cacheFirst(req));
+    if (url.pathname.includes('/assets/') || url.pathname.includes('/img/') || url.pathname.includes('/ocr/')) return event.respondWith(cacheFirst(req));
     return event.respondWith(staleWhileRevalidate(req));
   }
   if (url.hostname === 'fonts.googleapis.com' || url.hostname === 'fonts.gstatic.com') return event.respondWith(staleWhileRevalidate(req));
