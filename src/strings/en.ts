@@ -142,6 +142,7 @@ export const ui = {
   allFilter: 'All',
   noMatches: 'No Resonator matches these filters.',
   addResonator: 'Add another Resonator',
+  kitUnverified: (name: string) => `${name}'s kit is modelled from the game text and hasn't been checked against the in-game stat screen yet — numbers may be slightly off.`,
   kitNotModelled: (name: string) => `${name}'s own buffs (inherents, Forte, sequences) aren't modelled yet: damage uses stats, weapon, echoes, sets and team buffs only.`,
   enemy: (lv: number) => `vs Lv ${lv} enemy`,
   setAll10: 'Set all to Lv 10',

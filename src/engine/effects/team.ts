@@ -1,4 +1,5 @@
 import type { Effect } from '../types';
+import { HSIN_FLARE, HSIN_UNI, LUC_CHAFE, LUC_ECHO, SUO_ALIGNED } from './characters';
 import { rankScale } from './weapons';
 
 /**
@@ -6,7 +7,8 @@ import { rankScale } from './weapons';
  * (Team-wide sequence effects marked `team: true` in characters.ts are added on top.)
  * `seq` = sequence needed. Ids are prefixed per slot when collected, so two slots never share a toggle.
  */
-export interface TeamEffect extends Effect { seq: number }
+/** `onlyFor`: the buff only reaches this on-field Resonator (e.g. Hsin's bonus for Rover: Electro). */
+export interface TeamEffect extends Effect { seq: number; onlyFor?: string }
 
 export const TEAM_KITS: Record<string, TeamEffect[]> = {
   Hiyuki: [
@@ -25,8 +27,12 @@ export const TEAM_KITS: Record<string, TeamEffect[]> = {
   ],
   Qingxiao: [],
   Lucilla: [
-    { seq: 0, id: 'inherent', group: 'team', source: 'Inherent · Slow Motion', text: 'Resonance Mode - Glacio Chafe: Glacio RES of nearby targets reduced',
-      condition: { kind: 'toggle', label: 'Lucilla in Glacio Chafe mode', default: true }, mods: [{ key: 'resShred', value: 8 }], appliesTo: { element: 'Glacio' } },
+    { seq: 0, id: 'inherent', group: 'team', mode: LUC_CHAFE, source: 'Inherent · Slow Motion', text: 'After Spotlight: Glacio RES of nearby targets reduced',
+      condition: { kind: 'toggle', label: 'After Lucilla\'s Spotlight', default: true }, mods: [{ key: 'resShred', value: 8 }], appliesTo: { element: 'Glacio' } },
+    { seq: 0, id: 'outro.echo', group: 'team', mode: LUC_ECHO, source: 'Outro · Montage', text: 'Incoming Resonator: Echo Skill DMG Amplified',
+      condition: { kind: 'toggle', label: 'Lucilla Outro (Echo mode)', default: true }, mods: [{ key: 'amplify', value: 50 }], appliesTo: { dmgTypes: ['Echo'] } },
+    { seq: 0, id: 'zoom', group: 'team', mode: LUC_ECHO, source: 'Forte · Zoom', text: 'Each Zoom stack: active Resonator\'s Echo Skill Crit. DMG +10% (up to 4 with Remembrance)',
+      condition: { kind: 'stacks', label: 'Zoom stacks', max: 4, default: 'max' }, mods: [{ key: 'critDmg', value: 10 }], appliesTo: { dmgTypes: ['Echo'] } },
   ],
   Suisui: [
     { seq: 0, id: 'outro', group: 'team', source: 'Outro · Rippling Waters', text: 'All DMG Amplified for the team',
@@ -35,12 +41,53 @@ export const TEAM_KITS: Record<string, TeamEffect[]> = {
       condition: { kind: 'toggle', label: 'Reflecting Shadows (400+ Floral Epistle)', default: true }, mods: [{ key: 'amplify', value: 12 }] },
     { seq: 2, id: 's2', group: 'team', source: 'S2', text: 'After a Negative Status inside Ceaseless Landscape: Crit. DMG',
       condition: { kind: 'toggle', label: 'Inflicted a Negative Status (Suisui S2)', default: true }, mods: [{ key: 'critDmg', value: 50 }] },
+    { seq: 0, id: 'landscape', group: 'team', source: 'Liberation · Ceaseless Landscape', text: 'Negative Status stack limit on targets',
+      condition: { kind: 'toggle', label: 'Ceaseless Landscape active', default: true }, mods: [],
+      raisesMax: { key: 'c.carte.imprint', by: 3, exclusive: 'negativeStatusMax' } },
+    { seq: 0, id: 'landscape.havoc', group: 'team', source: 'Liberation · Ceaseless Landscape', text: 'After consuming Havoc Bane: Havoc DMG ignores DEF and Havoc RES',
+      condition: { kind: 'toggle', label: 'Consumed Havoc Bane in Ceaseless Landscape', default: false }, mods: [{ key: 'defIgnore', value: 6 }, { key: 'resShred', value: 12 }], appliesTo: { element: 'Havoc' } },
+    { seq: 0, id: 'outro.mist', group: 'team', source: 'Outro · Rippling Waters', text: '600 Floral Epistle: Undulating Mist ATK (max at Suisui Energy Regen ≥ 260%)',
+      condition: { kind: 'toggle', label: 'Undulating Mist (600 Floral Epistle)', default: false }, mods: [{ key: 'atkPct', value: 50 }] },
+  ],
+  Hsin: [
+    { seq: 0, id: 'outro.flare', group: 'team', mode: HSIN_FLARE, source: 'Outro · Herself a Thousand Lanterns', text: 'Electro DMG Amplified for the team',
+      condition: { kind: 'toggle', label: 'Hsin Outro (Nightglow)', default: true }, mods: [{ key: 'amplify', value: 20 }], appliesTo: { element: 'Electro' } },
+    { seq: 0, id: 'outro.uni', group: 'team', mode: HSIN_UNI, source: 'Outro · Herself a Thousand Lanterns', text: 'Shared Light: all DMG Amplified',
+      condition: { kind: 'toggle', label: 'Shared Light (gained Unison)', default: true }, mods: [{ key: 'amplify', value: 20 }] },
+    { seq: 0, onlyFor: 'Rover: Electro', id: 'rover', group: 'team', mode: HSIN_FLARE, source: 'Inherent · Tides of Succession', text: 'Rover: Electro casts Thunderous Fury with Hsin in the team: Electro DMG',
+      condition: { kind: 'toggle', label: 'Cast Thunderous Fury (Hsin in team)', default: true }, mods: [{ key: 'dmgElectro', value: 20 }] },
+  ],
+  'Rover: Electro': [
+    { seq: 0, id: 'outro', group: 'team', source: 'Outro · Rumbling Thunders', text: 'Electro Core: after inflicting a Negative Status, all DMG Amplified',
+      condition: { kind: 'toggle', label: 'Inflicted a Negative Status with Electro Core', default: true }, mods: [{ key: 'amplify', value: 25 }] },
+  ],
+  Lily: [
+    { seq: 0, id: 'outro', group: 'team', source: 'Outro · Blooming Fragrance', text: 'All DMG Amplified for the team',
+      condition: { kind: 'toggle', label: 'Lily Outro', default: true }, mods: [{ key: 'amplify', value: 25 }] },
+    { seq: 0, id: 'aroma', group: 'team', source: 'Liberation · Dream Aroma', text: 'Each Dream Aroma stack: ATK (max per stack at Lily Energy Regen ≥ 260%)',
+      condition: { kind: 'stacks', label: 'Dream Aroma stacks', max: 4, default: 'max' }, mods: [{ key: 'atkPct', value: 7 }] },
+    { seq: 2, id: 'aroma.s2', group: 'team', source: 'S2 · Listen, a Requiem from the Dream Cradle', text: 'Each Dream Aroma stack: Crit. Rate and Crit. DMG',
+      condition: { kind: 'stacks', label: 'Dream Aroma stacks', max: 4, default: 'max', key: 'aroma' }, mods: [{ key: 'critRate', value: 2 }, { key: 'critDmg', value: 6 }] },
+    { seq: 0, id: 'silvered', group: 'team', source: 'Forte · Silvered Dream', text: 'Echo Skill Crit. Rate / Crit. DMG (max at Lily Energy Regen ≥ 260%)',
+      condition: { kind: 'toggle', label: 'Silvered Dream', default: true }, mods: [{ key: 'critRate', value: 10 }, { key: 'critDmg', value: 20 }], appliesTo: { dmgTypes: ['Echo'] } },
+  ],
+  Suoming: [
+    { seq: 0, id: 'outro', group: 'team', source: 'Outro · Canopy Rumble', text: 'Incoming Resonator: Electro DMG Amplified',
+      condition: { kind: 'toggle', label: 'Suoming Outro', default: true }, mods: [{ key: 'amplify', value: 20 }], appliesTo: { element: 'Electro' } },
+    { seq: 0, id: 'outro.boon', group: 'team', source: 'Outro · Canopy Rumble', text: 'With Unison Boon: Resonance Skill DMG Amplified',
+      condition: { kind: 'toggle', label: 'Incoming Resonator has Unison Boon', default: false }, mods: [{ key: 'amplify', value: 25 }], appliesTo: { dmgTypes: ['Skill'] } },
+    { seq: 0, id: 'aligned', group: 'team', mode: SUO_ALIGNED, source: 'Inherent · Sunken Seal, Forged Lock', text: 'Aligned Seals Outro: Electro DMG (30%, up to 40% with Unison Boon)',
+      condition: { kind: 'toggle', label: 'Aligned Seals Outro', default: true }, mods: [{ key: 'dmgElectro', value: 30 }] },
+    { seq: 2, id: 's2', group: 'team', source: 'S2 · Breaking Thunder, Slaying Evil', text: 'Outro: incoming Resonator Crit. DMG (10%, more with Unison Boon)',
+      condition: { kind: 'toggle', label: 'Suoming Outro', default: true, key: 'outro' }, mods: [{ key: 'critDmg', value: 10 }] },
   ],
 };
 
 /** Parts of a teammate's kit that are known but not modelled (shown in the Team tab). */
 export const TEAM_NOT_MODELLED: Record<string, string[]> = {
-  Lucilla: ['Outro / S2: Glacio Chafe DMG Amplify (Glacio Chafe DMG not modelled)', 'Resonance Mode - Echo buffs'],
+  Lucilla: ['Outro / S2: Glacio Chafe DMG Amplify (Glacio Chafe DMG not modelled)'],
+  Ciaccona: ['Outro: Aero Erosion DMG Amplify (Aero Erosion DMG not modelled)'],
+  Suoming: ['Unison Boon (only for Resonators that can trigger Unison Response)'],
   Qingxiao: ['Outro: 800% ATK Aero hit (her own damage)'],
 };
 

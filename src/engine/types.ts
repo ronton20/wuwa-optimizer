@@ -57,6 +57,11 @@ export interface Mod {
   value: number;
   /** value at 0..N stacks, overrides `value` for stack conditions with non-linear scaling */
   byStacks?: number[];
+  /**
+   * Value worked out per hit from the final stat sheet: (stat − over) × per, capped at max.
+   * Only for hit-specific effects (with appliesTo); e.g. Lily: 0.5% Crit. Rate per 1% Energy Regen over 100%.
+   */
+  fromStat?: { stat: StatKey; over: number; per: number; max: number };
 }
 
 /** Which hits a mod is limited to. All given fields must match. */
@@ -91,6 +96,11 @@ export interface Effect {
    * `by`: adds stacks; `to`: sets a new limit. Raises sharing an `exclusive` group don't stack — the biggest wins.
    */
   raisesMax?: { key: string; by?: number; to?: number; exclusive?: string };
+  /**
+   * Only counts while the Resonator is in this mode (e.g. Hsin's Resonance Mode - Unison / Electro Flare).
+   * Effects sharing `key` share one picker; the chosen option index is stored in build.conditions[key].
+   */
+  mode?: { key: string; label: string; options: string[]; is: number };
 }
 
 /** A resolved effect with its current activation level (0 = off). */

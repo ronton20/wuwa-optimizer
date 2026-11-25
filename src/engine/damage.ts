@@ -30,6 +30,10 @@ export interface Zones {
 export interface HitValue { nonCrit: number; crit: number; avg: number; zones: Zones }
 
 
+/** (stat − over) × per, between 0 and max. */
+export const fromStatValue = (f: NonNullable<Effect['mods'][number]['fromStat']>, sheet: Stats['sheet']) =>
+  Math.min(f.max, Math.max(0, (sheet[f.stat] - f.over) * f.per));
+
 /** One hit with the given stats and effects. */
 function hitValue(stats: Stats, effects: ActiveEffect[], term: HitTerm, level: number, h: HitContext, enemy: Enemy, skip: Set<ContributionGroup>): HitValue {
   const s = stats.sheet;
@@ -42,7 +46,7 @@ function hitValue(stats: Stats, effects: ActiveEffect[], term: HitTerm, level: n
     const hitSpecific = Boolean(effect.appliesTo);
     if (hitSpecific && !matches(effect.appliesTo, h)) continue;
     for (const m of effect.mods) {
-      const v = modValue(m, effect, lv);
+      const v = m.fromStat ? (hitSpecific ? fromStatValue(m.fromStat, s) : 0) : modValue(m, effect, lv);
       if (m.key === 'amplify') amplify += v;
       else if (m.key === 'multBonus') multBonus += v;
       else if (m.key === 'resShred') resShred += v;

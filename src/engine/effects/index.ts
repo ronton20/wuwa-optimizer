@@ -41,18 +41,18 @@ export function collectEffects(build: Build, data: GameData): Effect[] {
   const offInherents = c.skills.filter((s) => s.kind === 'Inherent' && s.treeIndex && build.nodesOff?.includes(s.treeIndex)).map((s) => s.name);
   effects.push(...characterEffects(c.name, build.sequence).filter((e) => !(e.source.startsWith('Inherent') && offInherents.some((n) => e.source.includes(n)))));
   effects.push(...ACCOUNT_EFFECTS);
-  (build.team ?? []).forEach((t, slot) => { if (t && t.characterId !== build.characterId) effects.push(...teammateEffects(t, slot, data)); });
+  (build.team ?? []).forEach((t, slot) => { if (t && t.characterId !== build.characterId) effects.push(...teammateEffects(t, slot, data, c.name)); });
   return effects;
 }
 
 /** Everything a teammate gives the on-field Resonator. Ids/keys are prefixed per slot ("t1.", "t2."). */
-export function teammateEffects(t: Teammate, slot: number, data: GameData): Effect[] {
+export function teammateEffects(t: Teammate, slot: number, data: GameData, onField?: string): Effect[] {
   const c = data.characters.find((x) => x.id === t.characterId);
   if (!c) return [];
   const prefix = `t${slot + 1}.`;
   const who = `Teammate ${slot + 1} (${c.name})`;
   const raw: Effect[] = [
-    ...(TEAM_KITS[c.name] ?? []).filter((e) => t.sequence >= e.seq),
+    ...(TEAM_KITS[c.name] ?? []).filter((e) => t.sequence >= e.seq && (!e.onlyFor || e.onlyFor === onField)),
     ...(KITS[c.name] ?? []).filter((e) => e.team && t.sequence >= e.seq),
   ];
   const w = t.weapon && data.weapons.find((x) => x.id === t.weapon!.id);
@@ -65,6 +65,7 @@ export function teammateEffects(t: Teammate, slot: number, data: GameData): Effe
     group: 'team',
     source: `${who} · ${e.source}`,
     condition: e.condition && { ...e.condition, key: e.condition.key ? prefix + e.condition.key : undefined },
+    mode: e.mode && { ...e.mode, key: prefix + e.mode.key },
   }));
   t.custom.forEach((m, i) => {
     if (m.value) out.push({ id: `${prefix}custom.${i}`, group: 'team', source: `${who} · ${m.label || 'Custom'}`, text: m.label || 'Custom buff', mods: [{ key: m.key, value: m.value }] });
@@ -75,8 +76,17 @@ export function teammateEffects(t: Teammate, slot: number, data: GameData): Effe
 /** The id a toggle / stack count is stored under. */
 export const conditionKey = (e: Effect) => e.condition?.key ?? e.id;
 
+/** Option index currently picked for a mode key (0 when never set). */
+export const modeChoice = (key: string, conditions: Build['conditions']) => {
+  const v = conditions[key];
+  return typeof v === 'number' ? v : 0;
+};
+/** False when the effect belongs to a mode that isn't picked. */
+export const inMode = (effect: Effect, conditions: Build['conditions']) => !effect.mode || modeChoice(effect.mode.key, conditions) === effect.mode.is;
+
 /** Level of a toggle / non-stacking effect: 0 = off, 1 = on. */
 function toggleLevel(effect: Effect, conditions: Build['conditions']): number {
+  if (!inMode(effect, conditions)) return 0;
   const cond = effect.condition;
   if (!cond) return 1;
   if (cond.kind !== 'toggle') return 0;
@@ -115,6 +125,7 @@ export function resolveEffects(effects: Effect[], conditions: Build['conditions'
   return effects.map((effect) => {
     const cond = effect.condition;
     if (!cond || cond.kind === 'toggle') return { effect, level: toggleLevel(effect, conditions) };
+    if (!inMode(effect, conditions)) return { effect, level: 0 };
     const key = conditionKey(effect);
     const limit = maxes[key] ?? cond.max;
     const v = conditions[key];

@@ -1,11 +1,11 @@
 import type { ReactNode } from 'react';
 import data from '../../data/current';
-import { TEAM_ECHOES, TEAM_NOT_MODELLED, TEAM_SETS, echoBaseName, signatureOf, teammateEffects } from '../../engine';
+import { TEAM_ECHOES, TEAM_NOT_MODELLED, TEAM_SETS, echoBaseName, inMode, modeChoice, signatureOf, teammateEffects } from '../../engine';
 import type { Character } from '../../data/types';
 import { IconSelect, type SelectOption } from '../components/IconSelect';
 import type { ModKey, Teammate } from '../../engine/types';
 import { useBuild, useBuilds } from '../../state/buildStore';
-import { Pips, SectionTitle } from '../components/kit';
+import { Pips, SectionTitle, Segmented } from '../components/kit';
 import { ELEMENT_COLOR, echoImg, img } from '../theme';
 import { modLabel, valueLines } from '../effectText';
 
@@ -77,7 +77,14 @@ export function TeamTab({ characterId }: { characterId: number }) {
 function SlotCard({ slot, t, self, other, onChange }: { slot: number; t: Teammate | null; self: number; other?: number; onChange: (t: Teammate | null) => void }) {
   const choices = data.characters.filter((c) => c.id !== self && c.id !== other).sort((a, b) => b.rarity - a.rarity || a.name.localeCompare(b.name));
   const c = t && data.characters.find((x) => x.id === t.characterId);
-  const effects = t ? teammateEffects(t, slot, data) : [];
+  const build = useBuild(self);
+  const update = useBuilds((s) => s.update);
+  const onField = data.characters.find((x) => x.id === self)?.name;
+  const all = t ? teammateEffects(t, slot, data, onField) : [];
+  // a teammate with Resonance Modes (Hsin, Lucilla…) gives different buffs per mode
+  const modes = [...new Map(all.filter((e) => e.mode).map((e) => [e.mode!.key, e.mode!])).values()];
+  const effects = all.filter((e) => inMode(e, build.conditions));
+  const setMode = (key: string, i: number) => update(self, (b) => ({ ...b, conditions: { ...b.conditions, [key]: i } }));
 
   return (
     <div className="rounded-xl border border-white/10 bg-black/25 p-4">
@@ -149,6 +156,12 @@ function SlotCard({ slot, t, self, other, onChange }: { slot: number; t: Teammat
 
           <div>
             <div className="mb-1 text-xs uppercase tracking-wider text-muted">Gives the on-field Resonator</div>
+            {modes.map((m) => (
+              <div key={m.key} className="mb-2 flex flex-wrap items-center gap-2 text-xs">
+                <span className="text-muted">{m.label}</span>
+                <Segmented options={m.options} value={modeChoice(m.key, build.conditions)} onChange={(i) => setMode(m.key, i)} label={`${m.key} ${m.label}`} />
+              </div>
+            ))}
             {effects.length ? (
               <ul className="space-y-1 border-l border-[var(--accent)]/50 pl-3 text-xs">
                 {effects.map((e) => (

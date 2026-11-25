@@ -127,7 +127,8 @@ export async function readCard(card: CardImage, data: GameData, ocr: Ocr, icons:
   const element = hue == null ? null : ELEMENT_HUES.reduce((a, e) => (Math.abs(((hue - e[1] + 540) % 360) - 180) < Math.abs(((hue - a[1] + 540) % 360) - 180) ? e : a))[0];
   let candidates = data.characters;
   if (/rover/i.test(header) && element) candidates = data.characters.filter((c) => /^Rover/.test(c.name) && c.element === element);
-  const ch = best(header, candidates, (c) => c.name.replace(/^Rover: \w+$/, 'Rover'));
+  const ch = [best(header, candidates, (c) => c.name), best(header, candidates, (c) => c.name.replace(/^Rover: \w+$/, 'Rover'))]
+    .reduce((a, b) => (!a || (b && b.score > a.score) ? b : a));
   const character = ch && ch.score >= 0.55 ? ch.item : null;
   if (!character) warnings.push(`Couldn't recognise the Resonator ("${header}").`);
 
@@ -187,6 +188,12 @@ async function readEcho(card: CardImage, i: number, data: GameData, text: (r: Re
     if (m) { main = m; cost = Number(c); break; }
   }
   if (!cost) { warnings.push(`${slot}: couldn't read its cost.`); return { piece: null, cost: null, confidence: 0, alternatives: [] }; }
+  if (!main && cost) {
+    // the stat name is enough when the value was misread: each cost has one value per main stat
+    const byName = best(mainName, CARD_STATS.filter((x) => x.pct), (x) => x.label);
+    const stat = byName && byName.score >= 0.6 ? byName.item.pct : undefined;
+    main = (stat && data.echoStats.main[String(cost) as '1' | '3' | '4'].find((x) => x.stat === stat)) || null;
+  }
   if (!main) { main = data.echoStats.main[String(cost) as '1' | '3' | '4'][0]; warnings.push(`${slot}: couldn't read the main stat ("${mainLines.join(' ')}"), please check it.`); }
 
   // substats: a line with a value starts a stat; lines without one continue the previous name ("DMG Bonus")
@@ -217,9 +224,10 @@ async function readEcho(card: CardImage, i: number, data: GameData, text: (r: Re
   const scored: { id: number; d: number }[] = [];
   for (const e of data.echoes) {
     if (e.cost !== cost || !e.sets.length) continue;
-    const ref = (await icons(`echoHead:${e.id}`, N, bg)) ?? (await icons(`echo:${e.id}`, N, bg));
-    if (!ref) continue;
-    scored.push({ id: e.id, d: Math.min(...shots.map((s) => iconDistance(s, ref))) });
+    // the square head usually matches best, but a few echoes are framed more like the wide picture
+    const refs = (await Promise.all([icons(`echoHead:${e.id}`, N, bg), icons(`echo:${e.id}`, N, bg)])).filter((r) => r != null);
+    if (!refs.length) continue;
+    scored.push({ id: e.id, d: Math.min(...refs.flatMap((ref) => shots.map((s) => iconDistance(s, ref)))) });
   }
   scored.sort((a, b) => a.d - b.d);
   const top = scored[0];

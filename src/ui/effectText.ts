@@ -35,6 +35,10 @@ export function valueLines(e: Effect, level: number): ValueLine[] {
   const stacks = e.condition?.kind === 'stacks';
   return e.mods.map((m) => {
     const label = buffLabel(m.key);
+    if (m.fromStat) {
+      const f = m.fromStat;
+      return { text: `${modValueText(m.key, f.per)} ${label} per 1% ${STAT_LABEL[f.stat].replace(/%$/, '')} over ${f.over}% (max ${modValueText(m.key, f.max)})`, scope };
+    }
     if (m.byStacks) {
       const now = m.byStacks[Math.min(level, m.byStacks.length - 1)];
       const max = Math.max(...m.byStacks);

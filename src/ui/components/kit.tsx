@@ -85,6 +85,22 @@ export function Toggle({ on, onChange, label }: { on: boolean; onChange: (v: boo
   );
 }
 
+/** A few mutually exclusive options (e.g. Resonance Mode). */
+export function Segmented({ options, value, onChange, label }: { options: string[]; value: number; onChange: (i: number) => void; label: string }) {
+  return (
+    <div role="radiogroup" aria-label={label} className="inline-flex flex-wrap gap-1 rounded-full border border-white/10 bg-black/30 p-1">
+      {options.map((o, i) => (
+        <button key={o} role="radio" aria-checked={i === value} onClick={() => onChange(i)}
+          className={`relative rounded-full px-3 py-1 text-xs transition-colors ${i === value ? 'text-ink' : 'text-muted hover:text-ink'}`}>
+          {i === value && <motion.span layoutId={`seg-${label}`} transition={{ type: 'spring', stiffness: 500, damping: 36 }}
+            className="absolute inset-0 rounded-full border border-[var(--accent)] bg-[color-mix(in_oklab,var(--accent)_25%,transparent)]" />}
+          <span className="relative">{o}</span>
+        </button>
+      ))}
+    </div>
+  );
+}
+
 /** Stack count stepper. */
 export function Stepper({ value, max, onChange, label }: { value: number; max: number; onChange: (v: number) => void; label: string }) {
   const btn = 'h-7 w-7 rounded-full border border-white/15 hover:border-[var(--accent)] disabled:opacity-30';

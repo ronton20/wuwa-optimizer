@@ -1,8 +1,8 @@
 // Public API of the damage engine. Pure TypeScript — no React — so the v2 optimizer can run it in a Web Worker.
 export { computeDamage, BREAKDOWN_GROUPS, type HitResult, type DamageOptions, type Zones } from './damage';
 export { computeStats, type Stats, type Contribution, type ContributionGroup } from './stats';
-export { collectEffects, resolveEffects, conditionKey, conditionMaxes, teammateEffects } from './effects';
-export { NOT_MODELLED } from './effects/characters';
+export { collectEffects, resolveEffects, conditionKey, conditionMaxes, teammateEffects, inMode, modeChoice } from './effects';
+export { NOT_MODELLED, UNVERIFIED } from './effects/characters';
 export { DEFAULT_ENEMY, uniformRes, defMultiplier, resMultiplier } from './enemy';
 export { statWeights, rollValues, echoScores, type StatWeight, type RollValue, type EchoScore } from './statWeights';
 export { SIGNATURE, signatureOf } from './signatures';

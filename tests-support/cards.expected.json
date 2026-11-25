@@ -1,520 +1,967 @@
 {
- "hiyuki": {
-  "character": "Hiyuki",
-  "sequence": 6,
-  "skillLevels": {
-   "Normal": 10,
-   "Skill": 10,
-   "Liberation": 10,
-   "Intro": 10,
-   "Forte": 10
+  "hiyuki": {
+    "character": "Hiyuki",
+    "sequence": 6,
+    "skillLevels": {
+      "Normal": 10,
+      "Skill": 10,
+      "Liberation": 10,
+      "Intro": 10,
+      "Forte": 10
+    },
+    "weapon": "Frostburn",
+    "echoes": [
+      {
+        "name": "Reminiscence: Threnodian - Voidborne Construct",
+        "set": "Wishes of Quiet Snowfall",
+        "main": "critDmg 44",
+        "subs": [
+          "critRate 8.7",
+          "energyRegen 9.2",
+          "dmgLib 9.4",
+          "dmgSkill 7.9",
+          "critDmg 15"
+        ]
+      },
+      {
+        "name": "Glommoth",
+        "set": "Wishes of Quiet Snowfall",
+        "main": "dmgGlacio 30",
+        "subs": [
+          "critRate 6.9",
+          "critDmg 17.4",
+          "def 60",
+          "energyRegen 10.8",
+          "atkPct 7.9"
+        ]
+      },
+      {
+        "name": "Windlash Coleoid",
+        "set": "Wishes of Quiet Snowfall",
+        "main": "dmgGlacio 30",
+        "subs": [
+          "def 50",
+          "critRate 10.5",
+          "dmgHeavy 6.4",
+          "atkPct 9.4",
+          "critDmg 17.4"
+        ]
+      },
+      {
+        "name": "Tremor Warrior",
+        "set": "Wishes of Quiet Snowfall",
+        "main": "atkPct 18",
+        "subs": [
+          "energyRegen 11.6",
+          "critDmg 21",
+          "critRate 6.3",
+          "hp 390",
+          "dmgLib 7.9"
+        ]
+      },
+      {
+        "name": "Iceglint Dancer",
+        "set": "Wishes of Quiet Snowfall",
+        "main": "atkPct 18",
+        "subs": [
+          "atk 50",
+          "hpPct 9.4",
+          "critDmg 12.6",
+          "atkPct 7.1",
+          "critRate 8.7"
+        ]
+      }
+    ]
   },
-  "weapon": "Frostburn",
-  "echoes": [
-   {
-    "name": "Reminiscence: Threnodian - Voidborne Construct",
-    "set": "Wishes of Quiet Snowfall",
-    "main": "critDmg 44",
-    "subs": [
-     "critRate 8.7",
-     "energyRegen 9.2",
-     "dmgLib 9.4",
-     "dmgSkill 7.9",
-     "critDmg 15"
+  "lupa": {
+    "character": "Lupa",
+    "sequence": 0,
+    "skillLevels": {
+      "Normal": 8,
+      "Skill": 7,
+      "Liberation": 10,
+      "Intro": 10,
+      "Forte": 10
+    },
+    "weapon": "Wildfire Mark",
+    "echoes": [
+      {
+        "name": "Lioness of Glory",
+        "set": "Flaming Clawprint",
+        "main": "critRate 22",
+        "subs": [
+          "critRate 8.7",
+          "critDmg 17.4",
+          "dmgBasic 10.1",
+          "hpPct 8.6",
+          "dmgSkill 11.6"
+        ]
+      },
+      {
+        "name": "Corrosaurus",
+        "set": "Flaming Clawprint",
+        "main": "dmgFusion 30",
+        "subs": [
+          "dmgLib 7.9",
+          "critRate 8.7",
+          "dmgSkill 8.6",
+          "def 40",
+          "critDmg 13.8"
+        ]
+      },
+      {
+        "name": "Kerasaur",
+        "set": "Flaming Clawprint",
+        "main": "atkPct 30",
+        "subs": [
+          "energyRegen 10.8",
+          "critRate 7.5",
+          "atkPct 7.9",
+          "hp 360",
+          "critDmg 13.8"
+        ]
+      },
+      {
+        "name": "Fusion Drake",
+        "set": "Flaming Clawprint",
+        "main": "atkPct 18",
+        "subs": [
+          "dmgSkill 8.6",
+          "critDmg 12.6",
+          "critRate 8.1",
+          "dmgLib 7.9",
+          "hpPct 8.6"
+        ]
+      },
+      {
+        "name": "Electro Drake",
+        "set": "Flaming Clawprint",
+        "main": "atkPct 18",
+        "subs": [
+          "critDmg 19.8",
+          "dmgSkill 8.6",
+          "dmgLib 7.9",
+          "hpPct 7.9",
+          "critRate 6.9"
+        ]
+      }
     ]
-   },
-   {
-    "name": "Glommoth",
-    "set": "Wishes of Quiet Snowfall",
-    "main": "dmgGlacio 30",
-    "subs": [
-     "critRate 6.9",
-     "critDmg 17.4",
-     "def 60",
-     "energyRegen 10.8",
-     "atkPct 7.9"
-    ]
-   },
-   {
-    "name": "Windlash Coleoid",
-    "set": "Wishes of Quiet Snowfall",
-    "main": "dmgGlacio 30",
-    "subs": [
-     "def 50",
-     "critRate 10.5",
-     "dmgHeavy 6.4",
-     "atkPct 9.4",
-     "critDmg 17.4"
-    ]
-   },
-   {
-    "name": "Tremor Warrior",
-    "set": "Wishes of Quiet Snowfall",
-    "main": "atkPct 18",
-    "subs": [
-     "energyRegen 11.6",
-     "critDmg 21",
-     "critRate 6.3",
-     "hp 390",
-     "dmgLib 7.9"
-    ]
-   },
-   {
-    "name": "Iceglint Dancer",
-    "set": "Wishes of Quiet Snowfall",
-    "main": "atkPct 18",
-    "subs": [
-     "atk 50",
-     "hpPct 9.4",
-     "critDmg 12.6",
-     "atkPct 7.1",
-     "critRate 8.7"
-    ]
-   }
-  ]
- },
- "lupa": {
-  "character": "Lupa",
-  "sequence": 0,
-  "skillLevels": {
-   "Normal": 8,
-   "Skill": 7,
-   "Liberation": 10,
-   "Intro": 10,
-   "Forte": 10
   },
-  "weapon": "Wildfire Mark",
-  "echoes": [
-   {
-    "name": "Lioness of Glory",
-    "set": "Flaming Clawprint",
-    "main": "critRate 22",
-    "subs": [
-     "critRate 8.7",
-     "critDmg 17.4",
-     "dmgBasic 10.1",
-     "hpPct 8.6",
-     "dmgSkill 11.6"
+  "chisa": {
+    "character": "Chisa",
+    "sequence": 0,
+    "skillLevels": {
+      "Normal": 10,
+      "Skill": 10,
+      "Liberation": 10,
+      "Intro": 10,
+      "Forte": 10
+    },
+    "weapon": "Kumokiri",
+    "echoes": [
+      {
+        "name": "Reminiscence: Threnodian - Leviathan",
+        "set": "Thread of Severed Fate",
+        "main": "critDmg 44",
+        "subs": [
+          "defPct 10.9",
+          "critDmg 18.6",
+          "atk 40",
+          "dmgLib 10.1",
+          "energyRegen 9.2"
+        ]
+      },
+      {
+        "name": "Nightmare: Roseshroom",
+        "set": "Thread of Severed Fate",
+        "main": "atkPct 30",
+        "subs": [
+          "critDmg 21",
+          "defPct 10.9",
+          "dmgSkill 7.9",
+          "critRate 8.1",
+          "atkPct 8.6"
+        ]
+      },
+      {
+        "name": "Questless Knight",
+        "set": "Midnight Veil",
+        "main": "dmgHavoc 30",
+        "subs": [
+          "dmgHeavy 9.4",
+          "atkPct 7.9",
+          "critRate 6.3",
+          "energyRegen 9.2",
+          "critDmg 13.8"
+        ]
+      },
+      {
+        "name": "Nightmare: Dwarf Cassowary",
+        "set": "Thread of Severed Fate",
+        "main": "atkPct 18",
+        "subs": [
+          "atkPct 6.4",
+          "energyRegen 9.2",
+          "critRate 7.5",
+          "critDmg 13.8",
+          "hpPct 8.6"
+        ]
+      },
+      {
+        "name": "Fae Ignis",
+        "set": "Midnight Veil",
+        "main": "atkPct 18",
+        "subs": [
+          "critRate 6.3",
+          "dmgLib 10.1",
+          "critDmg 12.6",
+          "dmgBasic 7.9",
+          "dmgHeavy 9.4"
+        ]
+      }
     ]
-   },
-   {
-    "name": "Corrosaurus",
-    "set": "Flaming Clawprint",
-    "main": "dmgFusion 30",
-    "subs": [
-     "dmgLib 7.9",
-     "critRate 8.7",
-     "dmgSkill 8.6",
-     "def 40",
-     "critDmg 13.8"
-    ]
-   },
-   {
-    "name": "Kerasaur",
-    "set": "Flaming Clawprint",
-    "main": "atkPct 30",
-    "subs": [
-     "energyRegen 10.8",
-     "critRate 7.5",
-     "atkPct 7.9",
-     "hp 360",
-     "critDmg 13.8"
-    ]
-   },
-   {
-    "name": "Fusion Drake",
-    "set": "Flaming Clawprint",
-    "main": "atkPct 18",
-    "subs": [
-     "dmgSkill 8.6",
-     "critDmg 12.6",
-     "critRate 8.1",
-     "dmgLib 7.9",
-     "hpPct 8.6"
-    ]
-   },
-   {
-    "name": "Electro Drake",
-    "set": "Flaming Clawprint",
-    "main": "atkPct 18",
-    "subs": [
-     "critDmg 19.8",
-     "dmgSkill 8.6",
-     "dmgLib 7.9",
-     "hpPct 7.9",
-     "critRate 6.9"
-    ]
-   }
-  ]
- },
- "chisa": {
-  "character": "Chisa",
-  "sequence": 0,
-  "skillLevels": {
-   "Normal": 10,
-   "Skill": 10,
-   "Liberation": 10,
-   "Intro": 10,
-   "Forte": 10
   },
-  "weapon": "Kumokiri",
-  "echoes": [
-   {
-    "name": "Reminiscence: Threnodian - Leviathan",
-    "set": "Thread of Severed Fate",
-    "main": "critDmg 44",
-    "subs": [
-     "defPct 10.9",
-     "critDmg 18.6",
-     "atk 40",
-     "dmgLib 10.1",
-     "energyRegen 9.2"
+  "cartethyia": {
+    "character": "Cartethyia",
+    "sequence": 6,
+    "skillLevels": {
+      "Normal": 10,
+      "Skill": 10,
+      "Liberation": 10,
+      "Intro": 10,
+      "Forte": 10
+    },
+    "weapon": "Defier's Thorn",
+    "echoes": [
+      {
+        "name": "Reminiscence: Fleurdelys",
+        "set": "Windward Pilgrimage",
+        "main": "critRate 22",
+        "subs": [
+          "critDmg 18.6",
+          "critRate 10.5",
+          "dmgLib 8.6",
+          "hp 430",
+          "hpPct 8.6"
+        ]
+      },
+      {
+        "name": "Nightmare: Kelpie",
+        "set": "Windward Pilgrimage",
+        "main": "critDmg 44",
+        "subs": [
+          "critDmg 19.8",
+          "dmgSkill 9.4",
+          "critRate 7.5",
+          "atkPct 6.4",
+          "hpPct 7.1"
+        ]
+      },
+      {
+        "name": "Spectro Drake",
+        "set": "Windward Pilgrimage",
+        "main": "hpPct 22.8",
+        "subs": [
+          "defPct 11.8",
+          "critRate 7.5",
+          "dmgSkill 8.6",
+          "critDmg 18.6",
+          "energyRegen 7.6"
+        ]
+      },
+      {
+        "name": "Fusion Drake",
+        "set": "Windward Pilgrimage",
+        "main": "hpPct 22.8",
+        "subs": [
+          "critDmg 21",
+          "def 50",
+          "critRate 7.5",
+          "atk 40",
+          "hp 510"
+        ]
+      },
+      {
+        "name": "Glacio Drake",
+        "set": "Windward Pilgrimage",
+        "main": "hpPct 22.8",
+        "subs": [
+          "defPct 11.8",
+          "critRate 8.7",
+          "critDmg 13.8",
+          "atk 50",
+          "dmgBasic 7.9"
+        ]
+      }
     ]
-   },
-   {
-    "name": "Nightmare: Roseshroom",
-    "set": "Thread of Severed Fate",
-    "main": "atkPct 30",
-    "subs": [
-     "critDmg 21",
-     "defPct 10.9",
-     "dmgSkill 7.9",
-     "critRate 8.1",
-     "atkPct 8.6"
-    ]
-   },
-   {
-    "name": "Questless Knight",
-    "set": "Midnight Veil",
-    "main": "dmgHavoc 30",
-    "subs": [
-     "dmgHeavy 9.4",
-     "atkPct 7.9",
-     "critRate 6.3",
-     "energyRegen 9.2",
-     "critDmg 13.8"
-    ]
-   },
-   {
-    "name": "Nightmare: Dwarf Cassowary",
-    "set": "Thread of Severed Fate",
-    "main": "atkPct 18",
-    "subs": [
-     "atkPct 6.4",
-     "energyRegen 9.2",
-     "critRate 7.5",
-     "critDmg 13.8",
-     "hpPct 8.6"
-    ]
-   },
-   {
-    "name": "Fae Ignis",
-    "set": "Midnight Veil",
-    "main": "atkPct 18",
-    "subs": [
-     "critRate 6.3",
-     "dmgLib 10.1",
-     "critDmg 12.6",
-     "dmgBasic 7.9",
-     "dmgHeavy 9.4"
-    ]
-   }
-  ]
- },
- "cartethyia": {
-  "character": "Cartethyia",
-  "sequence": 6,
-  "skillLevels": {
-   "Normal": 10,
-   "Skill": 10,
-   "Liberation": 10,
-   "Intro": 10,
-   "Forte": 10
   },
-  "weapon": "Defier's Thorn",
-  "echoes": [
-   {
-    "name": "Reminiscence: Fleurdelys",
-    "set": "Windward Pilgrimage",
-    "main": "critRate 22",
-    "subs": [
-     "critDmg 18.6",
-     "critRate 10.5",
-     "dmgLib 8.6",
-     "hp 430",
-     "hpPct 8.6"
+  "galbrena": {
+    "character": "Galbrena",
+    "sequence": 0,
+    "skillLevels": {
+      "Normal": 10,
+      "Skill": 10,
+      "Liberation": 10,
+      "Intro": 6,
+      "Forte": 10
+    },
+    "weapon": "Lux & Umbra",
+    "echoes": [
+      {
+        "name": "Corrosaurus",
+        "set": "Flaming Clawprint",
+        "main": "dmgFusion 30",
+        "subs": [
+          "dmgHeavy 9.4",
+          "atkPct 10.9",
+          "dmgLib 9.4",
+          "critRate 6.3",
+          "critDmg 15"
+        ]
+      },
+      {
+        "name": "Lioness of Glory",
+        "set": "Flaming Clawprint",
+        "main": "critRate 22",
+        "subs": [
+          "critDmg 18.6",
+          "energyRegen 10.8",
+          "atkPct 7.9",
+          "critRate 7.5",
+          "atk 30"
+        ]
+      },
+      {
+        "name": "Nightmare: Viridblaze Saurian",
+        "set": "Flamewing's Shadow",
+        "main": "dmgFusion 30",
+        "subs": [
+          "critRate 7.5",
+          "atkPct 8.6",
+          "energyRegen 9.2",
+          "critDmg 12.6",
+          "dmgBasic 10.1"
+        ]
+      },
+      {
+        "name": "Nightmare: Baby Viridblaze Saurian",
+        "set": "Flamewing's Shadow",
+        "main": "atkPct 18",
+        "subs": [
+          "energyRegen 12.4",
+          "hpPct 7.9",
+          "atkPct 9.4",
+          "critDmg 12.6",
+          "critRate 6.9"
+        ]
+      },
+      {
+        "name": "Nightmare: Baby Roseshroom",
+        "set": "Flamewing's Shadow",
+        "main": "atkPct 18",
+        "subs": [
+          "critRate 9.3",
+          "atk 40",
+          "critDmg 12.6",
+          "atkPct 10.1",
+          "dmgLib 9.4"
+        ]
+      }
     ]
-   },
-   {
-    "name": "Nightmare: Kelpie",
-    "set": "Windward Pilgrimage",
-    "main": "critDmg 44",
-    "subs": [
-     "critDmg 19.8",
-     "dmgSkill 9.4",
-     "critRate 7.5",
-     "atkPct 6.4",
-     "hpPct 7.1"
-    ]
-   },
-   {
-    "name": "Spectro Drake",
-    "set": "Windward Pilgrimage",
-    "main": "hpPct 22.8",
-    "subs": [
-     "defPct 11.8",
-     "critRate 7.5",
-     "dmgSkill 8.6",
-     "critDmg 18.6",
-     "energyRegen 7.6"
-    ]
-   },
-   {
-    "name": "Fusion Drake",
-    "set": "Windward Pilgrimage",
-    "main": "hpPct 22.8",
-    "subs": [
-     "critDmg 21",
-     "def 50",
-     "critRate 7.5",
-     "atk 40",
-     "hp 510"
-    ]
-   },
-   {
-    "name": "Glacio Drake",
-    "set": "Windward Pilgrimage",
-    "main": "hpPct 22.8",
-    "subs": [
-     "defPct 11.8",
-     "critRate 8.7",
-     "critDmg 13.8",
-     "atk 50",
-     "dmgBasic 7.9"
-    ]
-   }
-  ]
- },
- "galbrena": {
-  "character": "Galbrena",
-  "sequence": 0,
-  "skillLevels": {
-   "Normal": 10,
-   "Skill": 10,
-   "Liberation": 10,
-   "Intro": 6,
-   "Forte": 10
   },
-  "weapon": "Lux & Umbra",
-  "echoes": [
-   {
-    "name": "Corrosaurus",
-    "set": "Flaming Clawprint",
-    "main": "dmgFusion 30",
-    "subs": [
-     "dmgHeavy 9.4",
-     "atkPct 10.9",
-     "dmgLib 9.4",
-     "critRate 6.3",
-     "critDmg 15"
+  "luuk": {
+    "character": "Luuk Herssen",
+    "sequence": 0,
+    "skillLevels": {
+      "Normal": 8,
+      "Skill": 10,
+      "Liberation": 9,
+      "Intro": 6,
+      "Forte": 8
+    },
+    "weapon": "Daybreaker's Spine",
+    "echoes": [
+      {
+        "name": "Twin Nova: Nebulous Cannon",
+        "set": "Rite of Gilded Revelation",
+        "main": "dmgSpectro 30",
+        "subs": [
+          "atkPct 8.6",
+          "dmgSkill 7.9",
+          "critDmg 18.6",
+          "critRate 6.9",
+          "defPct 12.8"
+        ]
+      },
+      {
+        "name": "Twin Nova: Collapsar Blade",
+        "set": "Rite of Gilded Revelation",
+        "main": "dmgSpectro 30",
+        "subs": [
+          "dmgHeavy 10.1",
+          "atkPct 8.6",
+          "critDmg 15",
+          "energyRegen 9.2",
+          "critRate 8.7"
+        ]
+      },
+      {
+        "name": "Hyvatia",
+        "set": "Rite of Gilded Revelation",
+        "main": "critDmg 44",
+        "subs": [
+          "atkPct 7.9",
+          "critRate 9.9",
+          "dmgSkill 7.9",
+          "dmgLib 7.9",
+          "critDmg 16.2"
+        ]
+      },
+      {
+        "name": "Mining Drone",
+        "set": "Rite of Gilded Revelation",
+        "main": "atkPct 18",
+        "subs": [
+          "critDmg 21",
+          "energyRegen 10.8",
+          "dmgHeavy 8.6",
+          "critRate 8.7",
+          "dmgSkill 7.9"
+        ]
+      },
+      {
+        "name": "Zip Zap",
+        "set": "Rite of Gilded Revelation",
+        "main": "atkPct 18",
+        "subs": [
+          "critDmg 17.4",
+          "atkPct 10.1",
+          "dmgHeavy 8.6",
+          "critRate 6.9",
+          "energyRegen 9.2"
+        ]
+      }
     ]
-   },
-   {
-    "name": "Lioness of Glory",
-    "set": "Flaming Clawprint",
-    "main": "critRate 22",
-    "subs": [
-     "critDmg 18.6",
-     "energyRegen 10.8",
-     "atkPct 7.9",
-     "critRate 7.5",
-     "atk 30"
-    ]
-   },
-   {
-    "name": "Nightmare: Viridblaze Saurian",
-    "set": "Flamewing's Shadow",
-    "main": "dmgFusion 30",
-    "subs": [
-     "critRate 7.5",
-     "atkPct 8.6",
-     "energyRegen 9.2",
-     "critDmg 12.6",
-     "dmgBasic 10.1"
-    ]
-   },
-   {
-    "name": "Nightmare: Baby Viridblaze Saurian",
-    "set": "Flamewing's Shadow",
-    "main": "atkPct 18",
-    "subs": [
-     "energyRegen 12.4",
-     "hpPct 7.9",
-     "atkPct 9.4",
-     "critDmg 12.6",
-     "critRate 6.9"
-    ]
-   },
-   {
-    "name": "Nightmare: Baby Roseshroom",
-    "set": "Flamewing's Shadow",
-    "main": "atkPct 18",
-    "subs": [
-     "critRate 9.3",
-     "atk 40",
-     "critDmg 12.6",
-     "atkPct 10.1",
-     "dmgLib 9.4"
-    ]
-   }
-  ]
- },
- "luuk": {
-  "character": "Luuk Herssen",
-  "sequence": 0,
-  "skillLevels": {
-   "Normal": 8,
-   "Skill": 10,
-   "Liberation": 9,
-   "Intro": 6,
-   "Forte": 8
   },
-  "weapon": "Daybreaker's Spine",
-  "echoes": [
-   {
-    "name": "Twin Nova: Nebulous Cannon",
-    "set": "Rite of Gilded Revelation",
-    "main": "dmgSpectro 30",
-    "subs": [
-     "atkPct 8.6",
-     "dmgSkill 7.9",
-     "critDmg 18.6",
-     "critRate 6.9",
-     "defPct 12.8"
+  "qingxiao": {
+    "character": "Qingxiao",
+    "sequence": 3,
+    "skillLevels": {
+      "Normal": 10,
+      "Skill": 10,
+      "Liberation": 10,
+      "Intro": 1,
+      "Forte": 10
+    },
+    "weapon": "Glint of Clouds",
+    "echoes": [
+      {
+        "name": "Calamity Effigy",
+        "set": "Heart of Evil's Purge",
+        "main": "critDmg 44",
+        "subs": [
+          "critDmg 13.8",
+          "dmgBasic 8.6",
+          "defPct 8.1",
+          "critRate 8.1",
+          "hpPct 6.4"
+        ]
+      },
+      {
+        "name": "Fog Lionarch",
+        "set": "Heart of Evil's Purge",
+        "main": "dmgAero 30",
+        "subs": [
+          "dmgBasic 10.1",
+          "critDmg 18.6",
+          "critRate 10.5",
+          "dmgSkill 9.4",
+          "dmgHeavy 9.4"
+        ]
+      },
+      {
+        "name": "Forbidden Bastion",
+        "set": "Heart of Evil's Purge",
+        "main": "atkPct 30",
+        "subs": [
+          "hpPct 7.9",
+          "dmgLib 10.9",
+          "critDmg 18.6",
+          "defPct 11.8",
+          "critRate 6.9"
+        ]
+      },
+      {
+        "name": "Kernel Puppet: Anger",
+        "set": "Heart of Evil's Purge",
+        "main": "atkPct 18",
+        "subs": [
+          "critRate 10.5",
+          "critDmg 13.8",
+          "hp 390",
+          "hpPct 8.6",
+          "dmgLib 6.4"
+        ]
+      },
+      {
+        "name": "Kernel Puppet: Worry",
+        "set": "Heart of Evil's Purge",
+        "main": "atkPct 18",
+        "subs": [
+          "dmgHeavy 8.6",
+          "critRate 7.5",
+          "critDmg 15",
+          "energyRegen 6.8",
+          "dmgBasic 7.1"
+        ]
+      }
     ]
-   },
-   {
-    "name": "Twin Nova: Collapsar Blade",
-    "set": "Rite of Gilded Revelation",
-    "main": "dmgSpectro 30",
-    "subs": [
-     "dmgHeavy 10.1",
-     "atkPct 8.6",
-     "critDmg 15",
-     "energyRegen 9.2",
-     "critRate 8.7"
-    ]
-   },
-   {
-    "name": "Hyvatia",
-    "set": "Rite of Gilded Revelation",
-    "main": "critDmg 44",
-    "subs": [
-     "atkPct 7.9",
-     "critRate 9.9",
-     "dmgSkill 7.9",
-     "dmgLib 7.9",
-     "critDmg 16.2"
-    ]
-   },
-   {
-    "name": "Mining Drone",
-    "set": "Rite of Gilded Revelation",
-    "main": "atkPct 18",
-    "subs": [
-     "critDmg 21",
-     "energyRegen 10.8",
-     "dmgHeavy 8.6",
-     "critRate 8.7",
-     "dmgSkill 7.9"
-    ]
-   },
-   {
-    "name": "Zip Zap",
-    "set": "Rite of Gilded Revelation",
-    "main": "atkPct 18",
-    "subs": [
-     "critDmg 17.4",
-     "atkPct 10.1",
-     "dmgHeavy 8.6",
-     "critRate 6.9",
-     "energyRegen 9.2"
-    ]
-   }
-  ]
- },
- "qingxiao": {
-  "character": "Qingxiao",
-  "sequence": 3,
-  "skillLevels": {
-   "Normal": 10,
-   "Skill": 10,
-   "Liberation": 10,
-   "Intro": 1,
-   "Forte": 10
   },
-  "weapon": "Glint of Clouds",
-  "echoes": [
-   {
-    "name": "Calamity Effigy",
-    "set": "Heart of Evil's Purge",
-    "main": "critDmg 44",
-    "subs": [
-     "critDmg 13.8",
-     "dmgBasic 8.6",
-     "defPct 8.1",
-     "critRate 8.1",
-     "hpPct 6.4"
+  "ciaccona": {
+    "character": "Ciaccona",
+    "sequence": 0,
+    "skillLevels": {
+      "Normal": 6,
+      "Skill": 6,
+      "Liberation": 6,
+      "Intro": 6,
+      "Forte": 6
+    },
+    "weapon": "Phasic Homogenizer",
+    "echoes": [
+      {
+        "name": "Nightmare: Kelpie",
+        "set": "Gusts of Welkin",
+        "main": "critRate 22",
+        "subs": [
+          "atk 40",
+          "critRate 7.5",
+          "critDmg 16.2",
+          "energyRegen 6.8",
+          "dmgLib 7.9"
+        ]
+      },
+      {
+        "name": "Phantom: Capitaneus",
+        "set": "Gusts of Welkin",
+        "main": "dmgAero 30",
+        "subs": [
+          "critRate 6.9",
+          "dmgLib 9.4",
+          "def 60",
+          "energyRegen 10",
+          "critDmg 12.6"
+        ]
+      },
+      {
+        "name": "Rage Against the Statue",
+        "set": "Gusts of Welkin",
+        "main": "dmgAero 30",
+        "subs": [
+          "energyRegen 10.8",
+          "dmgLib 11.6",
+          "dmgBasic 8.6",
+          "critRate 7.5",
+          "hp 430"
+        ]
+      },
+      {
+        "name": "Devotee's Flesh",
+        "set": "Gusts of Welkin",
+        "main": "atkPct 18",
+        "subs": [
+          "critRate 6.9",
+          "dmgLib 8.6",
+          "dmgBasic 8.6",
+          "atkPct 8.6",
+          "energyRegen 9.2"
+        ]
+      },
+      {
+        "name": "La Guardia",
+        "set": "Gusts of Welkin",
+        "main": "atkPct 18",
+        "subs": [
+          "critRate 7.5",
+          "critDmg 13.8",
+          "atk 60",
+          "dmgLib 8.6",
+          "dmgSkill 11.6"
+        ]
+      }
     ]
-   },
-   {
-    "name": "Fog Lionarch",
-    "set": "Heart of Evil's Purge",
-    "main": "dmgAero 30",
-    "subs": [
-     "dmgBasic 10.1",
-     "critDmg 18.6",
-     "critRate 10.5",
-     "dmgSkill 9.4",
-     "dmgHeavy 9.4"
+  },
+  "hsin": {
+    "character": "Hsin",
+    "sequence": 0,
+    "skillLevels": {
+      "Normal": 10,
+      "Skill": 10,
+      "Liberation": 10,
+      "Intro": 10,
+      "Forte": 10
+    },
+    "weapon": "Blooming Jadehaven",
+    "echoes": [
+      {
+        "name": "Reminiscence: Suhsin the Inevitable",
+        "set": "Heart of Sworn Vigil",
+        "main": "critDmg 44",
+        "subs": [
+          "critRate 10.5",
+          "critDmg 13.8",
+          "hpPct 8.6",
+          "atkPct 10.1",
+          "defPct 10.9"
+        ]
+      },
+      {
+        "name": "Formrender",
+        "set": "Heart of Sworn Vigil",
+        "main": "dmgElectro 30",
+        "subs": [
+          "energyRegen 7.6",
+          "critRate 7.5",
+          "critDmg 12.6",
+          "defPct 10",
+          "def 50"
+        ]
+      },
+      {
+        "name": "Soulfrayer",
+        "set": "Heart of Sworn Vigil",
+        "main": "dmgElectro 30",
+        "subs": [
+          "dmgHeavy 8.6",
+          "energyRegen 10.8",
+          "critRate 8.7",
+          "atkPct 7.9",
+          "hp 430"
+        ]
+      },
+      {
+        "name": "Bloomburst Puppet",
+        "set": "Heart of Sworn Vigil",
+        "main": "atkPct 18",
+        "subs": [
+          "critRate 7.5",
+          "critDmg 12.6",
+          "dmgHeavy 7.9",
+          "energyRegen 8.4",
+          "hpPct 9.4"
+        ]
+      },
+      {
+        "name": "Kernel Puppet: Joy",
+        "set": "Heart of Sworn Vigil",
+        "main": "atkPct 18",
+        "subs": [
+          "def 50",
+          "critDmg 16.2",
+          "atk 40",
+          "critRate 6.9",
+          "energyRegen 8.4"
+        ]
+      }
     ]
-   },
-   {
-    "name": "Forbidden Bastion",
-    "set": "Heart of Evil's Purge",
-    "main": "atkPct 30",
-    "subs": [
-     "hpPct 7.9",
-     "dmgLib 10.9",
-     "critDmg 18.6",
-     "defPct 11.8",
-     "critRate 6.9"
+  },
+  "lily": {
+    "character": "Lily",
+    "sequence": 0,
+    "skillLevels": {
+      "Normal": 1,
+      "Skill": 6,
+      "Liberation": 10,
+      "Intro": 10,
+      "Forte": 10
+    },
+    "weapon": "Cadenza",
+    "echoes": [
+      {
+        "name": "Formrender",
+        "set": "Flower of Tinged Yearning",
+        "main": "energyRegen 32",
+        "subs": [
+          "hp 430",
+          "hpPct 10.9",
+          "critDmg 19.8",
+          "critRate 7.5",
+          "dmgHeavy 10.1"
+        ]
+      },
+      {
+        "name": "Thousand-Puppet Pavilion",
+        "set": "Flower of Tinged Yearning",
+        "main": "healing 26.4",
+        "subs": [
+          "energyRegen 11.6",
+          "hp 580",
+          "critDmg 16.2",
+          "atkPct 8.6",
+          "dmgLib 9.4"
+        ]
+      },
+      {
+        "name": "Skywatch Lancer",
+        "set": "Flower of Tinged Yearning",
+        "main": "energyRegen 32",
+        "subs": [
+          "hpPct 10.1",
+          "energyRegen 7.6",
+          "critRate 6.3",
+          "dmgSkill 6.4",
+          "atk 50"
+        ]
+      },
+      {
+        "name": "Kernel Puppet: Reflection",
+        "set": "Flower of Tinged Yearning",
+        "main": "hpPct 22.8",
+        "subs": [
+          "energyRegen 8.4",
+          "critRate 6.9",
+          "hp 320",
+          "hpPct 8.6",
+          "atk 40"
+        ]
+      },
+      {
+        "name": "Kernel Puppet: Anger",
+        "set": "Flower of Tinged Yearning",
+        "main": "hpPct 22.8",
+        "subs": [
+          "critDmg 13.8",
+          "energyRegen 8.4",
+          "critRate 7.5",
+          "atkPct 8.6",
+          "dmgBasic 10.1"
+        ]
+      }
+    ],
+    "unsure": [
+      3
     ]
-   },
-   {
-    "name": "Kernel Puppet: Anger",
-    "set": "Heart of Evil's Purge",
-    "main": "atkPct 18",
-    "subs": [
-     "critRate 10.5",
-     "critDmg 13.8",
-     "hp 390",
-     "hpPct 8.6",
-     "dmgLib 6.4"
+  },
+  "lucilla": {
+    "character": "Lucilla",
+    "sequence": 0,
+    "skillLevels": {
+      "Normal": 6,
+      "Skill": 10,
+      "Liberation": 10,
+      "Intro": 6,
+      "Forte": 10
+    },
+    "weapon": "Freeze Frame",
+    "echoes": [
+      {
+        "name": "Glommoth",
+        "set": "Wishes of Quiet Snowfall",
+        "main": "dmgGlacio 30",
+        "subs": [
+          "critRate 10.5",
+          "dmgHeavy 6.4",
+          "hp 360",
+          "energyRegen 8.4",
+          "critDmg 13.8"
+        ]
+      },
+      {
+        "name": "Windlash Coleoid",
+        "set": "Wishes of Quiet Snowfall",
+        "main": "dmgGlacio 30",
+        "subs": [
+          "hpPct 8.6",
+          "critDmg 15",
+          "critRate 8.1",
+          "defPct 10.9",
+          "atk 40"
+        ]
+      },
+      {
+        "name": "Reminiscence: Threnodian - Voidborne Construct",
+        "set": "Wishes of Quiet Snowfall",
+        "main": "critDmg 44",
+        "subs": [
+          "dmgLib 7.9",
+          "critDmg 18.6",
+          "critRate 6.9",
+          "energyRegen 11.6",
+          "hpPct 7.9"
+        ]
+      },
+      {
+        "name": "Tremor Warrior",
+        "set": "Wishes of Quiet Snowfall",
+        "main": "atkPct 18",
+        "subs": [
+          "hpPct 7.9",
+          "critRate 6.3",
+          "hp 470",
+          "atkPct 9.4",
+          "critDmg 16.2"
+        ]
+      },
+      {
+        "name": "Shadow Stepper",
+        "set": "Wishes of Quiet Snowfall",
+        "main": "atkPct 18",
+        "subs": [
+          "critRate 6.9",
+          "atkPct 9.4",
+          "energyRegen 8.4",
+          "critDmg 17.4",
+          "atk 50"
+        ]
+      }
     ]
-   },
-   {
-    "name": "Kernel Puppet: Worry",
-    "set": "Heart of Evil's Purge",
-    "main": "atkPct 18",
-    "subs": [
-     "dmgHeavy 8.6",
-     "critRate 7.5",
-     "critDmg 15",
-     "energyRegen 6.8",
-     "dmgBasic 7.1"
+  },
+  "rover-electro": {
+    "character": "Rover: Electro",
+    "sequence": 2,
+    "skillLevels": {
+      "Normal": 8,
+      "Skill": 10,
+      "Liberation": 10,
+      "Intro": 6,
+      "Forte": 10
+    },
+    "weapon": "Emerald of Genesis",
+    "echoes": [
+      {
+        "name": "Soulfrayer",
+        "set": "Flash of Electric Reflection",
+        "main": "dmgElectro 30",
+        "subs": [
+          "critDmg 16.2",
+          "atkPct 9.4",
+          "energyRegen 7.6",
+          "hpPct 9.4",
+          "critRate 7.5"
+        ]
+      },
+      {
+        "name": "Reminiscence: Suhsin the Inevitable",
+        "set": "Flash of Electric Reflection",
+        "main": "critDmg 44",
+        "subs": [
+          "critRate 6.9",
+          "dmgHeavy 8.6",
+          "dmgSkill 9.4",
+          "dmgLib 10.9",
+          "energyRegen 8.4"
+        ]
+      },
+      {
+        "name": "Skywatch Lancer",
+        "set": "Flash of Electric Reflection",
+        "main": "dmgElectro 30",
+        "subs": [
+          "critDmg 16.2",
+          "hp 540",
+          "atkPct 9.4",
+          "dmgHeavy 7.1",
+          "energyRegen 6.8"
+        ]
+      },
+      {
+        "name": "Stone Picket",
+        "set": "Flash of Electric Reflection",
+        "main": "atkPct 18",
+        "subs": [
+          "hp 320",
+          "critDmg 18.6",
+          "critRate 7.5",
+          "def 60",
+          "dmgHeavy 6.4"
+        ]
+      },
+      {
+        "name": "Kernel Puppet: Worry",
+        "set": "Flash of Electric Reflection",
+        "main": "atkPct 18",
+        "subs": [
+          "critDmg 16.2",
+          "dmgLib 9.4",
+          "dmgSkill 10.1",
+          "atkPct 7.9",
+          "def 50"
+        ]
+      }
     ]
-   }
-  ]
- }
+  },
+  "suisui": {
+    "character": "Suisui",
+    "sequence": 0,
+    "skillLevels": {
+      "Normal": 1,
+      "Skill": 10,
+      "Liberation": 10,
+      "Intro": 10,
+      "Forte": 1
+    },
+    "weapon": "Variation",
+    "echoes": [
+      {
+        "name": "Forbidden Bastion",
+        "set": "Song of Feathered Trace",
+        "main": "energyRegen 32",
+        "subs": [
+          "dmgLib 9.4",
+          "critDmg 18.6",
+          "hpPct 9.4",
+          "critRate 8.7",
+          "atkPct 8.6"
+        ]
+      },
+      {
+        "name": "Thousand-Puppet Pavilion",
+        "set": "Song of Feathered Trace",
+        "main": "healing 26.4",
+        "subs": [
+          "energyRegen 12.4",
+          "dmgSkill 8.6",
+          "def 40",
+          "hp 470",
+          "critDmg 13.8"
+        ]
+      },
+      {
+        "name": "Fog Lionarch",
+        "set": "Song of Feathered Trace",
+        "main": "energyRegen 32",
+        "subs": [
+          "critRate 6.9",
+          "energyRegen 7.6",
+          "def 50",
+          "dmgHeavy 7.1",
+          "hpPct 10.1"
+        ]
+      },
+      {
+        "name": "Smolder",
+        "set": "Song of Feathered Trace",
+        "main": "hpPct 22.8",
+        "subs": [
+          "hpPct 8.6",
+          "energyRegen 9.2",
+          "hp 430",
+          "atk 40",
+          "dmgSkill 9.4"
+        ]
+      },
+      {
+        "name": "Smiter",
+        "set": "Song of Feathered Trace",
+        "main": "hpPct 22.8",
+        "subs": [
+          "dmgSkill 8.6",
+          "critDmg 17.4",
+          "energyRegen 9.2",
+          "dmgBasic 10.1",
+          "hp 430"
+        ]
+      }
+    ]
+  }
 }
