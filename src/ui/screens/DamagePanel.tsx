@@ -178,7 +178,7 @@ function Rows({ v }: { v: View }) {
             <span className={`${COL} font-semibold text-[var(--accent)]`}>{ui.now}</span>
           </div>
         </div>
-      ) : <Legend />}
+      ) : null}
       {groups.map((g) => (
         <section key={g.kind} className="mb-3">
           <h4 className="px-2 py-1.5 font-display text-xs uppercase tracking-[0.16em] text-muted">{SKILL_LABEL[g.kind]}</h4>
@@ -244,6 +244,7 @@ export function DamagePanel(props: Props) {
   return (
     <aside className="glass hidden max-h-[calc(100vh-2rem)] flex-col overflow-hidden rounded-2xl lg:sticky lg:top-4 lg:flex">
       <div className="border-b border-white/10"><Headline v={v} enemy={props.enemy} /></div>
+      {v.columns.length === 0 && <div className="border-b border-white/10 px-3 pt-2.5"><Legend /></div>}
       <div className="flex-1 overflow-y-auto p-3 scroll-thin"><Rows v={v} /></div>
     </aside>
   );
@@ -275,6 +276,7 @@ export function DamageSheet(props: Props) {
             <motion.div key="body" initial={{ height: 0 }} animate={{ height: 'auto' }} exit={{ height: 0 }} transition={{ duration: 0.25, ease: [0.2, 0.7, 0.2, 1] }}
               className="flex-1 overflow-y-auto border-t border-white/10 scroll-thin">
               <Headline v={v} enemy={props.enemy} compact />
+              {v.columns.length === 0 && <div className="sticky top-0 z-10 bg-night-900/95 px-3 pt-2 backdrop-blur"><Legend /></div>}
               <div className="p-3 pt-0"><Rows v={v} /></div>
             </motion.div>
           )}

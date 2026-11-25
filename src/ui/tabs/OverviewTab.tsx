@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import data from '../../data/current';
 import type { StatKey } from '../../data/types';
-import type { Stats } from '../../engine';
+import { echoScores, type Stats } from '../../engine';
+import { EchoScoreBadge, GRADE_COLOR } from '../components/EchoScoreBadge';
 import { useBuild } from '../../state/buildStore';
 import { AnimatedNumber, SectionTitle, pct } from '../components/kit';
 import { echoImg, img } from '../theme';
@@ -31,6 +32,10 @@ export function OverviewTab({ characterId, stats }: { characterId: number; stats
   const [pinned, setPinned] = useState<Family | null>(null);
   const active = hover ?? pinned;
   const lines = PCT_LINES.filter((k) => ['critRate', 'critDmg', 'energyRegen'].includes(k) || stats.sheet[k] > 0);
+  const scores = useMemo(() => echoScores(build, data), [build]);
+  const scored = scores.filter((x): x is NonNullable<typeof x> => !!x);
+  const avg = scored.length ? scored.reduce((a, x) => a + x.score, 0) / scored.length : 0;
+  const weakest = scored.length > 1 ? scores.indexOf(scored.reduce((a, x) => (x.score < a.score ? x : a))) : -1;
   const cost = build.echoes.reduce((a, p) => a + (p ? data.echoes.find((e) => e.id === p.echoId)?.cost ?? 0 : 0), 0);
 
   /** props that make any element a hover/tap target for a stat */
@@ -98,7 +103,10 @@ export function OverviewTab({ characterId, stats }: { characterId: number; stats
       </div>
 
       <div>
-        <SectionTitle right={<span className="text-xs text-muted">{ui.cost} {cost}/12</span>}>{ui.echoes}</SectionTitle>
+        <SectionTitle right={<span className="flex items-center gap-3 text-xs text-muted">
+          {scored.length > 0 && <span title={ui.echoScoreHint}>{ui.avgScore} <span className="font-display text-sm" style={{ color: GRADE_COLOR[avg >= 80 ? 'SS' : avg >= 65 ? 'S' : avg >= 50 ? 'A' : avg >= 35 ? 'B' : avg >= 20 ? 'C' : 'D'] }}>{avg.toFixed(1)}</span></span>}
+          <span>{ui.cost} {cost}/12</span>
+        </span>}>{ui.echoes}</SectionTitle>
         <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
           {Array.from({ length: 5 }, (_, i) => build.echoes[i] ?? null).map((p, i) => {
             if (!p) return <li key={i} className="flex min-h-40 items-center justify-center rounded-xl border border-dashed border-white/10 text-xs text-muted">{ui.emptySlot}</li>;
@@ -106,7 +114,7 @@ export function OverviewTab({ characterId, stats }: { characterId: number; stats
             const fixed = e && data.echoStats.fixed[String(e.cost) as '1' | '3' | '4'];
             const set = data.sonatas.find((s) => s.id === p.setId);
             return (
-              <li key={i} className={`overflow-hidden rounded-xl border bg-black/30 ${i === 0 ? 'border-gold/50' : 'border-white/10'}`}>
+              <li key={i} className={`flex flex-col overflow-hidden rounded-xl border bg-black/30 ${i === 0 ? 'border-gold/50' : 'border-white/10'}`}>
                 <div className="flex items-start gap-2 p-2">
                   {echoImg(p.echoId) ? <img src={echoImg(p.echoId)} alt="" className="h-16 w-16 shrink-0 rounded-lg object-cover" /> : <div className="h-16 w-16 rounded-lg bg-white/5" />}
                   <div className="min-w-0 flex-1">
@@ -134,6 +142,14 @@ export function OverviewTab({ characterId, stats }: { characterId: number; stats
                     </li>
                   ))}
                 </ul>
+                {scores[i] && (
+                  <div className="mt-auto flex items-center justify-between gap-2 border-t border-white/10 px-3 py-1.5">
+                    {i === weakest
+                      ? <span className="whitespace-nowrap rounded-full bg-[#ff6b8b]/15 px-2 py-0.5 text-[10px] text-[#ff9db1]" title={ui.weakestHint}>▼ {ui.workOnThis}</span>
+                      : <span className="text-[10px] uppercase tracking-widest text-muted">{ui.score}</span>}
+                    <EchoScoreBadge s={scores[i]!} />
+                  </div>
+                )}
               </li>
             );
           })}

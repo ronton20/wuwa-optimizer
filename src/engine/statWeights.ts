@@ -53,3 +53,50 @@ export function rollValues(build: Build, data: GameData, rowLabel: string): Roll
     })
     .sort((a, b) => b.gainPct - a.gainPct || Number(b.capped) - Number(a.capped));
 }
+
+export interface EchoScore {
+  /** 0–100: how close the 5 substats are to the best 5 possible for this character (max rolls) */
+  score: number;
+  grade: 'SS' | 'S' | 'A' | 'B' | 'C' | 'D';
+  /** each substat's share of the score, in score points */
+  subs: { stat: StatKey; points: number }[];
+}
+
+/**
+ * Echo substat scores for this build. A substat's weight is the damage one max roll of it adds to the
+ * strongest hit (or what losing one would cost, so a capped Crit. Rate still counts), relative to the best stat.
+ * An echo scores sum(value / maxRoll × weight) over its substats, against the 5 highest weights at max roll = 100.
+ * Main stats don't count: every echo of a cost can have the right one, the substats are what you farm.
+ */
+export function echoScores(build: Build, data: GameData): (EchoScore | null)[] {
+  const hits = computeDamage(build, data, { noBreakdown: true }).hits;
+  const sums = new Map<string, number>();
+  for (const h of hits) sums.set(h.row.label, (sums.get(h.row.label) ?? 0) + h.avg * h.count);
+  const row = [...sums].sort((a, b) => b[1] - a[1])[0]?.[0];
+  const pieces = build.echoes;
+  if (!row) return pieces.map(() => null);
+  const dmg = (extra?: { key: StatKey; value: number }) =>
+    computeDamage(build, data, { noBreakdown: true, extra: extra && [{ id: 'probe', group: 'echo', source: 'probe', text: '', mods: [extra] }] })
+      .hits.filter((h) => h.row.label === row).reduce((a, h) => a + h.avg * h.count, 0);
+  const base = dmg();
+  const rolls = data.echoStats.subRolls as Record<StatKey, number[]>;
+  const weight = new Map<StatKey, number>();
+  for (const [stat, r] of Object.entries(rolls) as [StatKey, number[]][]) {
+    const max = Math.max(...r);
+    weight.set(stat, base > 0 ? Math.max(dmg({ key: stat, value: max }) / base - 1, 1 - dmg({ key: stat, value: -max }) / base, 0) : 0);
+  }
+  const best = Math.max(...weight.values()) || 1;
+  for (const [k, v] of weight) weight.set(k, v / best);
+  const ideal = [...weight.values()].sort((a, b) => b - a).slice(0, 5).reduce((a, v) => a + v, 0) || 1;
+
+  return pieces.map((p) => {
+    if (!p) return null;
+    const subs = p.subs.map((s) => {
+      const max = Math.max(...(rolls[s.stat] ?? [1]));
+      return { stat: s.stat, points: ((s.value / max) * (weight.get(s.stat) ?? 0) * 100) / ideal };
+    });
+    const score = Math.min(100, subs.reduce((a, s) => a + s.points, 0));
+    const grade = score >= 80 ? 'SS' : score >= 65 ? 'S' : score >= 50 ? 'A' : score >= 35 ? 'B' : score >= 20 ? 'C' : 'D';
+    return { score, grade, subs };
+  });
+}

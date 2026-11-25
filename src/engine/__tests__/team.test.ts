@@ -95,3 +95,18 @@ describe('skill tree switches', () => {
     expect(cr(h) - cr({ ...h, nodesOff: [9, 13] })).toBeCloseTo(1.2 + 2.8, 6);
   });
 });
+
+import { echoScores } from '../statWeights';
+describe('echo scores', () => {
+  const h = BUILDS.find((b) => b.name === 'Hiyuki')!.build;
+  it('scores every echo 0–100 and ranks better substats higher', () => {
+    const s = echoScores(h, data);
+    expect(s).toHaveLength(5);
+    for (const x of s) expect(x!.score).toBeGreaterThan(0), expect(x!.score).toBeLessThanOrEqual(100);
+    const perfect = { ...h, echoes: [{ ...h.echoes[0]!, subs: [{ stat: 'critRate' as const, value: 10.5 }, { stat: 'critDmg' as const, value: 21 }, { stat: 'atkPct' as const, value: 11.6 }, { stat: 'dmgLib' as const, value: 11.6 }, { stat: 'atk' as const, value: 60 }] }] };
+    const junk = { ...h, echoes: [{ ...h.echoes[0]!, subs: [{ stat: 'hpPct' as const, value: 11.6 }, { stat: 'defPct' as const, value: 14.7 }, { stat: 'hp' as const, value: 580 }, { stat: 'def' as const, value: 70 }, { stat: 'energyRegen' as const, value: 12.4 }] }] };
+    expect(echoScores(perfect, data)[0]!.score).toBeGreaterThan(90);
+    expect(echoScores(junk, data)[0]!.score).toBeLessThan(1);
+    expect(echoScores(junk, data)[0]!.grade).toBe('D');
+  });
+});

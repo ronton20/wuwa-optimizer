@@ -7,7 +7,8 @@ import { useBuild, useBuilds } from '../../state/buildStore';
 import { RichText, SectionTitle } from '../components/kit';
 import { echoImg, img } from '../theme';
 import { STAT_LABEL, ui } from '../../strings/en';
-import { computeDamage, rollValues, statWeights, type StatWeight } from '../../engine';
+import { computeDamage, echoScores, rollValues, statWeights, type EchoScore, type StatWeight } from '../../engine';
+import { EchoScoreBadge } from '../components/EchoScoreBadge';
 import { IconSelect } from '../components/IconSelect';
 import { BAND_COLOR, rollColor, rollTitle } from '../rollQuality';
 
@@ -38,6 +39,7 @@ export function EchoesTab({ characterId }: { characterId: number }) {
   const slots: (EchoPiece | undefined)[] = Array.from({ length: SLOTS }, (_, i) => build.echoes[i] ?? undefined);
   const total = slots.reduce((a, p) => a + costOf(p), 0);
   const weights = useMemo(() => statWeights(build, data), [build]);
+  const scores = useMemo(() => echoScores(build, data), [build]);
   const name = data.characters.find((c) => c.id === characterId)!.name;
 
   const setPiece = (i: number, p: EchoPiece | undefined) =>
@@ -73,6 +75,7 @@ export function EchoesTab({ characterId }: { characterId: number }) {
                 {src ? <img src={src} alt={e?.name} className="h-full w-full object-cover" /> : <span className="text-2xl text-muted">+</span>}
                 {e && <span className="absolute right-1 top-0.5 rounded bg-black/60 px-1 text-xs font-semibold text-gold">{e.cost}</span>}
                 {i === 0 && <span className="absolute inset-x-0 bottom-0 bg-black/70 text-[10px] uppercase tracking-wider text-gold-soft">Main</span>}
+                {scores[i] && <span className={`absolute left-1 ${i === 0 ? 'bottom-5' : 'bottom-1'}`}><EchoScoreBadge s={scores[i]!} solid /></span>}
               </button>
             );
           })}
@@ -87,6 +90,7 @@ export function EchoesTab({ characterId }: { characterId: number }) {
         key={slot}
         weights={weights}
         who={name}
+        score={scores[slot] ?? null}
         index={slot}
         piece={slots[slot]}
         costLeft={MAX_COST - total + costOf(slots[slot])}
@@ -129,7 +133,7 @@ function SonataSummary({ pieces }: { pieces: EchoPiece[] }) {
   );
 }
 
-function SlotEditor({ index, piece, costLeft, onChange, onMakeMain, weights, who }: { index: number; piece?: EchoPiece; costLeft: number; onChange: (p?: EchoPiece) => void; onMakeMain?: () => void; weights: Weights; who: string }) {
+function SlotEditor({ index, piece, costLeft, onChange, onMakeMain, weights, who, score }: { index: number; piece?: EchoPiece; costLeft: number; onChange: (p?: EchoPiece) => void; onMakeMain?: () => void; weights: Weights; who: string; score: EchoScore | null }) {
   const [picking, setPicking] = useState(!piece);
   const echo = piece && echoById(piece.echoId);
 
@@ -142,6 +146,12 @@ function SlotEditor({ index, piece, costLeft, onChange, onMakeMain, weights, who
           {piece && <button onClick={() => { onChange(undefined); setPicking(true); }} className="rounded-full border border-white/15 px-3 py-1 text-muted hover:border-fusion hover:text-fusion">Remove</button>}
         </div>
       }>{index === 0 ? 'Main echo' : `Echo ${index + 1}`}</SectionTitle>
+      {score && piece && !picking && (
+        <div className="-mt-2 mb-3 flex flex-wrap items-center gap-2 text-xs text-muted">
+          {ui.score} <EchoScoreBadge s={score} size="lg" />
+          <span>{ui.echoScoreHint}</span>
+        </div>
+      )}
 
       {picking || !piece || !echo ? (
         <EchoPicker costLeft={costLeft} onPick={(e) => { onChange(pieceFor(e, piece)); setPicking(false); }} />
