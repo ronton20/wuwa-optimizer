@@ -80,7 +80,9 @@ export function Toggle({ on, onChange, label }: { on: boolean; onChange: (v: boo
   return (
     <button role="switch" aria-checked={on} aria-label={label} onClick={() => onChange(!on)}
       className={`relative h-6 w-11 shrink-0 rounded-full border transition-colors ${on ? 'border-[var(--accent)] bg-[color-mix(in_oklab,var(--accent)_35%,transparent)]' : 'border-white/20 bg-white/5'}`}>
-      <motion.span layout transition={{ type: 'spring', stiffness: 500, damping: 32 }} className={`absolute top-0.5 h-4.5 w-4.5 rounded-full ${on ? 'right-0.5 bg-[var(--accent)]' : 'left-0.5 bg-white/60'}`} />
+      {/* animate only the slide itself: `layout` would also animate the knob when the whole row moves (e.g. a card above expands) */}
+      <motion.span initial={false} animate={{ x: on ? 20 : 0 }} transition={{ type: 'spring', stiffness: 500, damping: 32 }}
+        className={`absolute top-0.5 left-0.5 h-4.5 w-4.5 rounded-full transition-colors ${on ? 'bg-[var(--accent)]' : 'bg-white/60'}`} />
     </button>
   );
 }
