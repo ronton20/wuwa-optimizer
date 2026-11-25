@@ -4,12 +4,15 @@ import data from '../../data/current';
 import type { StatKey } from '../../data/types';
 import { collectEffects, resolveEffects } from '../effects';
 import { computeStats } from '../stats';
-import { BUILDS, UNEXPLAINED } from './builds';
+import { BUILDS } from './builds';
 
-/** The menu shows a resting character: every conditional (combat-triggered) effect is off. */
+/**
+ * The menu shows a resting character: every combat-triggered effect is off.
+ * Account-wide upgrades (acct.*) are passive, so they stay at their default (on).
+ */
 function screenStats(build: (typeof BUILDS)[number]['build']) {
   const effects = collectEffects(build, data);
-  const off = Object.fromEntries(effects.filter((e) => e.condition).map((e) => [e.id, e.condition!.kind === 'toggle' ? false : 0]));
+  const off = Object.fromEntries(effects.filter((e) => e.condition && !e.id.startsWith('acct.')).map((e) => [e.id, e.condition!.kind === 'toggle' ? false : 0]));
   return computeStats(build, data, resolveEffects(effects, off));
 }
 
@@ -41,7 +44,7 @@ describe('engine reproduces the in-game stat screens', () => {
       it('every % line matches to 0.1%', () => {
         for (const key of PCT_KEYS) {
           const expected = g.screen.pct[key] ?? 0;
-          const engine = s.sheet[key] + (key === 'energyRegen' ? UNEXPLAINED.energyRegen : 0);
+          const engine = s.sheet[key];
           expect(Math.round(engine * 10) / 10, key).toBeCloseTo(expected, 5);
         }
       });

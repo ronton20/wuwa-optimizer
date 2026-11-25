@@ -4,6 +4,13 @@ import { characterEffects } from './characters';
 import { mainEchoEffects, sonataEffects } from './echoes';
 import { weaponEffects } from './weapons';
 
+/** Account-wide upgrades. Passive in game, so the stat screen includes them; a toggle for players who lack them. */
+export const ACCOUNT_EFFECTS: Effect[] = [{
+  id: 'acct.lahairoi.bike', group: 'self', source: 'Lahai-Roi Bike upgrade', text: 'On-field Resonator Energy Regen +30%',
+  condition: { kind: 'toggle', label: 'Bike Energy Regen upgrade unlocked', default: true },
+  mods: [{ key: 'energyRegen', value: 30 }],
+}];
+
 /** Every effect the build could have, before conditions are applied. */
 export function collectEffects(build: Build, data: GameData): Effect[] {
   const c = data.characters.find((x) => x.id === build.characterId)!;
@@ -28,6 +35,7 @@ export function collectEffects(build: Build, data: GameData): Effect[] {
   if (main) effects.push(...mainEchoEffects(main.name, c as Character));
 
   effects.push(...characterEffects(c.name, build.sequence));
+  effects.push(...ACCOUNT_EFFECTS);
   return effects;
 }
 

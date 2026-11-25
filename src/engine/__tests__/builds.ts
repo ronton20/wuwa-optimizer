@@ -98,9 +98,3 @@ export const BUILDS: GoldenBuild[] = [
     },
   },
 ];
-
-/**
- * Every screen shows +30% Energy Regen that no equipped item, set or kit explains.
- * Kept out of the engine until we know its source (asked in the plan doc).
- */
-export const UNEXPLAINED = { energyRegen: 30 };
