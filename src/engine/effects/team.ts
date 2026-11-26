@@ -1,5 +1,5 @@
 import type { Effect } from '../types';
-import { HSIN_FLARE, HSIN_UNI, LUC_CHAFE, LUC_ECHO, SUO_ALIGNED } from './characters';
+import { DEN_STRAIN, HSIN_FLARE, HSIN_UNI, LUC_CHAFE, LUC_ECHO, SUO_ALIGNED } from './characters';
 import { rankScale } from './weapons';
 
 /**
@@ -80,6 +80,52 @@ export const TEAM_KITS: Record<string, TeamEffect[]> = {
       condition: { kind: 'toggle', label: 'Aligned Seals Outro', default: true }, mods: [{ key: 'dmgElectro', value: 30 }] },
     { seq: 2, id: 's2', group: 'team', source: 'S2 · Breaking Thunder, Slaying Evil', text: 'Outro: incoming Resonator Crit. DMG (10%, more with Unison Boon)',
       condition: { kind: 'toggle', label: 'Suoming Outro', default: true, key: 'outro' }, mods: [{ key: 'critDmg', value: 10 }] },
+  ],
+  Aemeath: [
+    { seq: 0, id: 'outro', group: 'team', source: 'Outro · Silent Protection', text: 'All DMG Amplified for the team (except Aemeath)',
+      condition: { kind: 'toggle', label: 'Aemeath Outro', default: true }, mods: [{ key: 'amplify', value: 10 }] },
+    { seq: 0, id: 'outro.more', group: 'team', source: 'Outro · Silent Protection', text: 'Inflicts Fusion Burst / Tune Rupture - Shifting (matching her mode): Amplify raised to 20%',
+      condition: { kind: 'toggle', label: 'Inflicts Fusion Burst / Tune Rupture - Shifting', default: true }, mods: [{ key: 'amplify', value: 10 }] },
+  ],
+  Denia: [
+    { seq: 0, id: 'outro', group: 'team', mode: DEN_STRAIN, source: 'Outro · Unfinished Lies', text: 'Incoming Resonator: all DMG Amplified',
+      condition: { kind: 'toggle', label: 'Denia Outro (Tune Strain mode)', default: true }, mods: [{ key: 'amplify', value: 15 }] },
+    { seq: 0, id: 'outro.strain', group: 'team', mode: DEN_STRAIN, source: 'Outro · Unfinished Lies', text: 'After inflicting Tune Strain - Shifting: Amplify raised to 40%',
+      condition: { kind: 'toggle', label: 'Inflicted Tune Strain - Shifting', default: true }, mods: [{ key: 'amplify', value: 25 }] },
+  ],
+  Lynae: [
+    { seq: 0, id: 'outro', group: 'team', source: "Outro · Let's Hit the Road!", text: 'Incoming Resonator: all DMG Amplified, Resonance Liberation DMG Amplified',
+      condition: { kind: 'toggle', label: 'Lynae Outro', default: true }, mods: [{ key: 'amplify', value: 15 }] },
+    { seq: 0, id: 'outro.lib', group: 'team', source: "Outro · Let's Hit the Road!", text: 'Incoming Resonator: Resonance Liberation DMG Amplified',
+      condition: { kind: 'toggle', label: 'Lynae Outro', default: true, key: 'outro' }, mods: [{ key: 'amplify', value: 25 }], appliesTo: { dmgTypes: ['Liberation'] } },
+    { seq: 2, id: 's2', group: 'team', source: 'S2', text: 'Outro: incoming Resonator all DMG Amplified',
+      condition: { kind: 'toggle', label: 'Lynae Outro', default: true, key: 'outro' }, mods: [{ key: 'amplify', value: 25 }] },
+  ],
+  Mornye: [
+    { seq: 0, id: 'outro', group: 'team', source: 'Outro · Recursion', text: 'All DMG Amplified for the team',
+      condition: { kind: 'toggle', label: 'Mornye Outro', default: true }, mods: [{ key: 'amplify', value: 25 }] },
+    { seq: 2, id: 's2', group: 'team', source: 'S2', text: 'Against Interfered Marker: Crit. DMG (max at Mornye Energy Regen ≥ 260%)',
+      condition: { kind: 'toggle', label: 'Target has Interfered Marker', default: true }, mods: [{ key: 'critDmg', value: 32 }] },
+  ],
+  Shorekeeper: [
+    { seq: 0, id: 'outro', group: 'team', source: 'Outro · Binary Butterfly', text: 'All DMG Amplified for nearby Resonators',
+      condition: { kind: 'toggle', label: 'Shorekeeper Outro', default: true }, mods: [{ key: 'amplify', value: 15 }] },
+    { seq: 0, id: 'inner', group: 'team', source: 'Liberation · Inner Stellarealm', text: 'Crit. Rate (max at Shorekeeper Energy Regen ≥ 250%)',
+      condition: { kind: 'toggle', label: 'Inner Stellarealm (or Supernal)', default: true }, mods: [{ key: 'critRate', value: 12.5 }] },
+    { seq: 0, id: 'supernal', group: 'team', source: 'Liberation · Supernal Stellarealm', text: 'Crit. DMG (max at Shorekeeper Energy Regen ≥ 250%)',
+      condition: { kind: 'toggle', label: 'Supernal Stellarealm', default: true }, mods: [{ key: 'critDmg', value: 25 }] },
+  ],
+  Zhezhi: [
+    { seq: 0, id: 'outro', group: 'team', source: 'Outro · Carve and Draw', text: 'Incoming Resonator: Glacio DMG Amplified',
+      condition: { kind: 'toggle', label: 'Zhezhi Outro', default: true }, mods: [{ key: 'amplify', value: 20 }], appliesTo: { element: 'Glacio' } },
+    { seq: 0, id: 'outro.skill', group: 'team', source: 'Outro · Carve and Draw', text: 'Incoming Resonator: Resonance Skill DMG Amplified',
+      condition: { kind: 'toggle', label: 'Zhezhi Outro', default: true, key: 'outro' }, mods: [{ key: 'amplify', value: 25 }], appliesTo: { dmgTypes: ['Skill'] } },
+  ],
+  Lupa: [
+    { seq: 0, id: 'outro', group: 'team', source: 'Outro · Stand by Me, Warrior', text: 'Incoming Resonator: Fusion DMG Amplified',
+      condition: { kind: 'toggle', label: 'Lupa Outro', default: true }, mods: [{ key: 'amplify', value: 20 }], appliesTo: { element: 'Fusion' } },
+    { seq: 0, id: 'outro.basic', group: 'team', source: 'Outro · Stand by Me, Warrior', text: 'Incoming Resonator: Basic Attack DMG Amplified',
+      condition: { kind: 'toggle', label: 'Lupa Outro', default: true, key: 'outro' }, mods: [{ key: 'amplify', value: 25 }], appliesTo: { dmgTypes: ['Basic'] } },
   ],
 };
 

@@ -963,5 +963,523 @@
         ]
       }
     ]
+  },
+  "aemeath": {
+    "character": "Aemeath",
+    "sequence": 0,
+    "skillLevels": {
+      "Normal": 10,
+      "Skill": 10,
+      "Liberation": 10,
+      "Intro": 10,
+      "Forte": 10
+    },
+    "weapon": "Everbright Polestar",
+    "echoes": [
+      {
+        "name": "Sigillum",
+        "set": "Trailblazing Star",
+        "main": "critDmg 44",
+        "subs": [
+          "critRate 6.9",
+          "hpPct 9.4",
+          "critDmg 18.6",
+          "hp 540",
+          "energyRegen 10"
+        ]
+      },
+      {
+        "name": "Reminiscence: Kronaclaw",
+        "set": "Trailblazing Star",
+        "main": "dmgFusion 30",
+        "subs": [
+          "dmgHeavy 8.6",
+          "critRate 8.7",
+          "critDmg 12.6",
+          "atkPct 8.6",
+          "energyRegen 9.2"
+        ]
+      },
+      {
+        "name": "Kronablight",
+        "set": "Trailblazing Star",
+        "main": "dmgFusion 30",
+        "subs": [
+          "atkPct 9.4",
+          "defPct 10.9",
+          "critDmg 16.2",
+          "energyRegen 6.8",
+          "dmgLib 7.9"
+        ]
+      },
+      {
+        "name": "Shadow Stepper",
+        "set": "Trailblazing Star",
+        "main": "atkPct 18",
+        "subs": [
+          "atkPct 7.9",
+          "critRate 9.9",
+          "critDmg 15",
+          "dmgBasic 8.6",
+          "hpPct 8.6"
+        ]
+      },
+      {
+        "name": "Geospider S4",
+        "set": "Trailblazing Star",
+        "main": "atkPct 18",
+        "subs": [
+          "energyRegen 8.4",
+          "critDmg 21",
+          "atk 50",
+          "critRate 7.5",
+          "hpPct 7.9"
+        ]
+      }
+    ]
+  },
+  "carlotta": {
+    "character": "Carlotta",
+    "sequence": 0,
+    "skillLevels": {
+      "Normal": 10,
+      "Skill": 10,
+      "Liberation": 10,
+      "Intro": 6,
+      "Forte": 10
+    },
+    "weapon": "The Last Dance",
+    "echoes": [
+      {
+        "name": "Sentry Construct",
+        "set": "Frosty Resolve",
+        "main": "critRate 22",
+        "subs": [
+          "atkPct 10.1",
+          "critDmg 15",
+          "dmgLib 10.1",
+          "defPct 11.8",
+          "critRate 6.9"
+        ]
+      },
+      {
+        "name": "Cuddle Wuddle",
+        "set": "Frosty Resolve",
+        "main": "dmgGlacio 30",
+        "subs": [
+          "hp 430",
+          "critRate 6.9",
+          "dmgSkill 7.9",
+          "energyRegen 10.8",
+          "atkPct 9.4"
+        ]
+      },
+      {
+        "name": "Abyssal Patricius",
+        "set": "Frosty Resolve",
+        "main": "dmgGlacio 30",
+        "subs": [
+          "critRate 6.9",
+          "dmgHeavy 7.9",
+          "dmgSkill 7.9",
+          "critDmg 21",
+          "atkPct 10.9"
+        ]
+      },
+      {
+        "name": "Galescourge Stalker",
+        "set": "Frosty Resolve",
+        "main": "atkPct 18",
+        "subs": [
+          "critRate 6.3",
+          "dmgHeavy 10.1",
+          "energyRegen 7.6",
+          "hpPct 8.6",
+          "critDmg 13.8"
+        ]
+      },
+      {
+        "name": "Lottie Lost",
+        "set": "Frosty Resolve",
+        "main": "atkPct 18",
+        "subs": [
+          "energyRegen 8.4",
+          "hp 510",
+          "critRate 9.9",
+          "critDmg 18.6",
+          "atkPct 9.4"
+        ]
+      }
+    ]
+  },
+  "denia": {
+    "character": "Denia",
+    "sequence": 0,
+    "skillLevels": {
+      "Normal": 10,
+      "Skill": 10,
+      "Liberation": 10,
+      "Intro": 6,
+      "Forte": 10
+    },
+    "weapon": "Forged Dwarf Star",
+    "echoes": [
+      {
+        "name": "Voidwing Moth",
+        "set": "Reel of Spliced Memories",
+        "main": "dmgFusion 30",
+        "subs": [
+          "dmgLib 10.9",
+          "critDmg 12.6",
+          "critRate 6.3",
+          "energyRegen 11.6",
+          "def 60"
+        ]
+      },
+      {
+        "name": "Nameless Explorer",
+        "set": "Reel of Spliced Memories",
+        "main": "critDmg 44",
+        "subs": [
+          "critDmg 13.8",
+          "critRate 7.5",
+          "hpPct 10.1",
+          "dmgSkill 7.9",
+          "dmgLib 8.6"
+        ]
+      },
+      {
+        "name": "Flora Reindeer",
+        "set": "Reel of Spliced Memories",
+        "main": "dmgFusion 30",
+        "subs": [
+          "def 50",
+          "critRate 7.5",
+          "critDmg 12.6",
+          "dmgSkill 10.1",
+          "dmgLib 10.1"
+        ]
+      },
+      {
+        "name": "Flora Drone",
+        "set": "Reel of Spliced Memories",
+        "main": "atkPct 18",
+        "subs": [
+          "hp 320",
+          "critRate 6.9",
+          "hpPct 7.9",
+          "critDmg 16.2",
+          "dmgHeavy 10.9"
+        ]
+      },
+      {
+        "name": "Iceglint Dancer",
+        "set": "Reel of Spliced Memories",
+        "main": "atkPct 18",
+        "subs": [
+          "dmgSkill 7.9",
+          "dmgBasic 7.9",
+          "critRate 7.5",
+          "energyRegen 10",
+          "defPct 11.8"
+        ]
+      }
+    ]
+  },
+  "lynae": {
+    "character": "Lynae",
+    "sequence": 0,
+    "skillLevels": {
+      "Normal": 10,
+      "Skill": 10,
+      "Liberation": 10,
+      "Intro": 10,
+      "Forte": 10
+    },
+    "weapon": "Spectrum Blaster",
+    "echoes": [
+      {
+        "name": "Hyvatia",
+        "set": "Pact of Neonlight Leap",
+        "main": "critDmg 44",
+        "subs": [
+          "critDmg 12.6",
+          "energyRegen 9.2",
+          "hp 470",
+          "atk 50",
+          "critRate 7.5"
+        ]
+      },
+      {
+        "name": "Mining Reindeer",
+        "set": "Pact of Neonlight Leap",
+        "main": "dmgSpectro 30",
+        "subs": [
+          "critDmg 16.2",
+          "atk 50",
+          "dmgLib 10.9",
+          "critRate 9.9",
+          "defPct 14.7"
+        ]
+      },
+      {
+        "name": "Sabercat Reaver",
+        "set": "Pact of Neonlight Leap",
+        "main": "dmgSpectro 30",
+        "subs": [
+          "hp 430",
+          "critDmg 19.8",
+          "atk 40",
+          "critRate 9.3",
+          "def 50"
+        ]
+      },
+      {
+        "name": "Flora Drone",
+        "set": "Pact of Neonlight Leap",
+        "main": "atkPct 18",
+        "subs": [
+          "dmgHeavy 9.4",
+          "critDmg 15",
+          "energyRegen 8.4",
+          "critRate 6.9",
+          "def 60"
+        ]
+      },
+      {
+        "name": "Geospider S4",
+        "set": "Pact of Neonlight Leap",
+        "main": "atkPct 18",
+        "subs": [
+          "energyRegen 10.8",
+          "dmgLib 10.1",
+          "atkPct 7.1",
+          "critDmg 17.4",
+          "dmgBasic 10.9"
+        ]
+      }
+    ]
+  },
+  "mornye": {
+    "character": "Mornye",
+    "sequence": 0,
+    "skillLevels": {
+      "Normal": 6,
+      "Skill": 6,
+      "Liberation": 10,
+      "Intro": 1,
+      "Forte": 10
+    },
+    "weapon": "Discord",
+    "echoes": [
+      {
+        "name": "Reactor Husk",
+        "set": "Halo of Starry Radiance",
+        "main": "defPct 41.8",
+        "subs": [
+          "def 50",
+          "energyRegen 8.4",
+          "atkPct 10.9",
+          "dmgHeavy 10.1",
+          "defPct 10"
+        ]
+      },
+      {
+        "name": "Frostbite Coleoid",
+        "set": "Halo of Starry Radiance",
+        "main": "energyRegen 32",
+        "subs": [
+          "def 60",
+          "energyRegen 9.2",
+          "atkPct 10.1",
+          "defPct 10",
+          "hpPct 8.6"
+        ]
+      },
+      {
+        "name": "Sabercat Reaver",
+        "set": "Halo of Starry Radiance",
+        "main": "energyRegen 32",
+        "subs": [
+          "dmgLib 7.9",
+          "defPct 9",
+          "hpPct 7.9",
+          "critRate 8.1",
+          "atk 40"
+        ]
+      },
+      {
+        "name": "Geospider S4",
+        "set": "Halo of Starry Radiance",
+        "main": "defPct 18",
+        "subs": [
+          "dmgLib 8.6",
+          "critDmg 15",
+          "hpPct 7.9",
+          "def 40",
+          "dmgSkill 6.4"
+        ]
+      },
+      {
+        "name": "Mining Drone",
+        "set": "Halo of Starry Radiance",
+        "main": "defPct 18",
+        "subs": [
+          "critDmg 19.8",
+          "dmgSkill 9.4",
+          "critRate 6.3",
+          "energyRegen 7.6",
+          "hp 430"
+        ]
+      }
+    ]
+  },
+  "shorekeeper": {
+    "character": "Shorekeeper",
+    "sequence": 0,
+    "skillLevels": {
+      "Normal": 6,
+      "Skill": 8,
+      "Liberation": 8,
+      "Intro": 6,
+      "Forte": 6
+    },
+    "weapon": "Variation",
+    "echoes": [
+      {
+        "name": "Fallacy of No Return",
+        "set": "Rejuvenating Glow",
+        "main": "healing 26.4",
+        "subs": [
+          "def 40",
+          "energyRegen 10",
+          "defPct 10.9",
+          "hpPct 7.9",
+          "critRate 8.7"
+        ]
+      },
+      {
+        "name": "Hoochief",
+        "set": "Rejuvenating Glow",
+        "main": "energyRegen 32",
+        "subs": [
+          "hpPct 8.6",
+          "energyRegen 7.6",
+          "dmgLib 7.9",
+          "dmgBasic 8.6",
+          "critDmg 13.8"
+        ]
+      },
+      {
+        "name": "Rocksteady Guardian",
+        "set": "Rejuvenating Glow",
+        "main": "energyRegen 32",
+        "subs": [
+          "hpPct 6.4",
+          "energyRegen 8.4",
+          "dmgBasic 8.6",
+          "atkPct 11.6",
+          "defPct 12.8"
+        ]
+      },
+      {
+        "name": "Fusion Dreadmane",
+        "set": "Rejuvenating Glow",
+        "main": "hpPct 22.8",
+        "subs": [
+          "energyRegen 8.4",
+          "dmgSkill 7.9",
+          "dmgLib 7.9",
+          "critDmg 12.6",
+          "dmgBasic 9.4"
+        ]
+      },
+      {
+        "name": "Whiff Whaff",
+        "set": "Rejuvenating Glow",
+        "main": "hpPct 22.8",
+        "subs": [
+          "dmgHeavy 7.9",
+          "energyRegen 12.4",
+          "atkPct 8.6",
+          "dmgBasic 7.9",
+          "critRate 6.9"
+        ]
+      }
+    ]
+  },
+  "zhezhi": {
+    "character": "Zhezhi",
+    "sequence": 0,
+    "skillLevels": {
+      "Normal": 1,
+      "Skill": 1,
+      "Liberation": 1,
+      "Intro": 1,
+      "Forte": 1
+    },
+    "weapon": "Radiant Dawn",
+    "echoes": [
+      {
+        "name": "Impermanence Heron",
+        "set": "Moonlit Clouds",
+        "main": "critRate 22",
+        "subs": [
+          "dmgSkill 8.6",
+          "critRate 9.3",
+          "hpPct 7.9",
+          "dmgHeavy 11.6",
+          "dmgBasic 6.4"
+        ]
+      },
+      {
+        "name": "Carapace",
+        "set": "Moonlit Clouds",
+        "main": "dmgGlacio 30",
+        "subs": [
+          "atkPct 7.9",
+          "critRate 8.1",
+          "dmgBasic 8.6",
+          "energyRegen 12.4",
+          "atk 30"
+        ]
+      },
+      {
+        "name": "Viridblaze Saurian",
+        "set": "Moonlit Clouds",
+        "main": "dmgGlacio 30",
+        "subs": [
+          "critRate 6.3",
+          "defPct 10.9",
+          "atk 40",
+          "dmgBasic 7.9",
+          "atkPct 7.9"
+        ]
+      },
+      {
+        "name": "Sabyr Boar",
+        "set": "Moonlit Clouds",
+        "main": "atkPct 18",
+        "subs": [
+          "atkPct 7.9",
+          "energyRegen 6.8",
+          "defPct 10",
+          "atk 40",
+          "hp 430"
+        ]
+      },
+      {
+        "name": "Whiff Whaff",
+        "set": "Moonlit Clouds",
+        "main": "atkPct 18",
+        "subs": [
+          "critRate 7.5",
+          "dmgLib 7.9",
+          "hpPct 8.6",
+          "dmgHeavy 7.9",
+          "def 50"
+        ]
+      }
+    ]
   }
 }

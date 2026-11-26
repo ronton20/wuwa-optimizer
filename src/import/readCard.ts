@@ -244,13 +244,15 @@ async function readEcho(card: CardImage, i: number, data: GameData, text: (r: Re
   // set: if the echo can drop in several sets, compare the round set icon
   let setId = echo.sets[0];
   if (echo.sets.length > 1) {
-    // every set icon has the same coloured ring: compare only the symbol inside it
-    const ring = center(await card.crop(L.echo.sonata(x), 32, 32), 0.6);
+    // the symbol tells most sets apart; some share a symbol and differ only in the ring's colour
+    // (Pact of Neonlight Leap / Halo of Starry Radiance), so the whole icon counts too
+    const full = await card.crop(L.echo.sonata(x), 32, 32);
+    const ring = center(full, 0.6);
     let bestSet = { id: setId, d: Infinity };
     for (const id of echo.sets) {
       const ref = await icons(`sonata:${id}`, 32, bg);
       if (!ref) continue;
-      const d = iconDistance(ring, center(ref, 0.6));
+      const d = iconDistance(ring, center(ref, 0.6)) + iconDistance(full, ref);
       if (d < bestSet.d) bestSet = { id, d };
     }
     setId = bestSet.id;

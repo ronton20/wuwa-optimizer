@@ -100,4 +100,37 @@ describe('new kits', () => {
     expect(hit(b, 'Improvised Symphonic Poem Skill DMG').zones.defMult).toBeGreaterThan(hit(s0, 'Improvised Symphonic Poem Skill DMG').zones.defMult);
     expect(hit(b, 'Stage 1 DMG').zones.defMult).toBeCloseTo(hit(s0, 'Stage 1 DMG').zones.defMult, 9);
   });
+
+  it("Mornye's Critical Protocol scales with DEF and gets crits from Energy Regen", () => {
+    const b = build('Mornye');
+    const er = computeDamage(b, data, { noBreakdown: true }).stats.sheet.energyRegen;
+    const hits = computeDamage(b, data, { noBreakdown: true }).hits;
+    const lib = hits.find((h) => h.skill.kind === 'Liberation')!;
+    const intro = hits.find((h) => h.skill.kind === 'Intro')!; // both rows are called "Skill DMG"
+    expect(lib.term.scaling).toBe('def');
+    expect(lib.zones.critRate - intro.zones.critRate).toBeCloseTo(Math.min(80, (er - 100) * 0.5), 6);
+  });
+
+  it("Aemeath's mode picks which Between the Stars applies", () => {
+    const row = 'Heavenfall Edict: Finale DMG';
+    const burst = hit(build('Aemeath'), row).zones.critDmg;
+    const rupture = hit(build('Aemeath', { conditions: { 'c.aem.mode': 1 } }), row).zones.critDmg;
+    expect(burst - rupture).toBeCloseTo(60 - 60, 6); // 2 × 30% vs 3 × 20%
+    expect(hit(build('Aemeath', { sequence: 3 }), row).zones.critDmg - burst).toBeCloseTo(0, 6); // S3: flat 60% replaces the stacks
+  });
+
+  it("Lupa's S6 DEF ignore skips her normal Intro Skill", () => {
+    const s6 = build('Lupa', { sequence: 6 });
+    const s0 = build('Lupa');
+    const intro = (b: Build) => computeDamage(b, data, { noBreakdown: true }).hits.find((h) => h.skill.kind === 'Intro' && h.row.label === 'Skill Damage')!.zones.defMult;
+    const lib = (b: Build) => computeDamage(b, data, { noBreakdown: true }).hits.find((h) => h.skill.kind === 'Liberation' && h.row.label === 'Skill Damage')!.zones.defMult;
+    expect(intro(s6)).toBeCloseTo(intro(s0), 9);
+    expect(lib(s6)).toBeGreaterThan(lib(s0));
+  });
+
+  it('Outro buffs from the new supports reach the on-field Resonator', () => {
+    const solo = hit(build('Carlotta'), 'Death Knell DMG').zones.amplify;
+    const withZhezhi = hit(build('Carlotta', { team: [mate('Zhezhi'), mate('Shorekeeper')] }), 'Death Knell DMG');
+    expect(withZhezhi.zones.amplify - solo).toBeCloseTo(20 + 25 + 15, 6); // Glacio + Skill (Zhezhi), all (Shorekeeper)
+  });
 });

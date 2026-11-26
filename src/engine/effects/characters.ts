@@ -27,6 +27,18 @@ export const LUC_CHAFE = lucMode(0), LUC_ECHO = lucMode(1);
 const suoMode = mode('c.suo.seal', 'Outro set-up', ['Aligned Seals (buff the next Resonator)', 'Seal Master (Suoming stays on field)']);
 export const SUO_ALIGNED = suoMode(0), SUO_MASTER = suoMode(1);
 
+const aemMode = mode('c.aem.mode', 'Resonance Mode', ['Fusion Burst', 'Tune Rupture']);
+export const AEM_BURST = aemMode(0), AEM_RUPTURE = aemMode(1);
+const denMode = mode('c.den.mode', 'Resonance Mode', ['Fusion Burst', 'Tune Strain']);
+export const DEN_BURST = denMode(0), DEN_STRAIN = denMode(1);
+
+const AEM_HEAVY = { rows: /^Heavy Attack - (Aemeath|Mech) Charged I{1,2} DMG$/, label: 'Heavy Attack - Aemeath / Mech' };
+const LYN_FINISHERS = { rows: /^Basic Attack - (Visual Impact|Iridescent Splash) DMG$/, label: 'Visual Impact and Iridescent Splash' };
+const MOR_LIB = { skillKinds: ['Liberation'] as SkillKind[], rows: /^Skill DMG$/, label: 'Critical Protocol' };
+const SK_DISCERN = { rows: /^Discernment DMG$/, label: 'Intro Skill - Discernment' };
+const GAL_DEMON = { rows: /^(Basic Attack - Seraphic Execution|Heavy Attack - Flamewing Verdict|Mid-air Attack - Hellsent Barrage|Dodge Counter - Purgatory Scourge|Resonance Skill - Ravage)/, label: 'Demon Hypostasis attacks' };
+const GAL_DEMON_NORMAL = { rows: /^(Basic Attack - Seraphic Execution|Heavy Attack - Flamewing Verdict|Mid-air Attack - Hellsent Barrage|Dodge Counter - Purgatory Scourge)/, label: 'Seraphic Execution, Flamewing Verdict, Hellsent Barrage and Purgatory Scourge' };
+const LUUK_AUREOLE = { rows: /^(Aureole of Execution|Gavel of Earthshaker|Ichor Deposit)/, label: 'Aureole of Execution, Gavel of Earthshaker and Ichor Deposit' };
 const SUISUI_BURST = { rows: /^(Awakening Spring|Skill) DMG$/, skillKinds: ['Skill', 'Intro'] as SkillKind[], label: 'Awakening Spring and Intro Skill - Tinkling Jade' };
 const CIA_DOWNBEAT = { rows: /^Quadruple Downbeat DMG$/, label: 'Heavy Attack - Quadruple Downbeat' };
 
@@ -248,6 +260,212 @@ export const KITS: Record<string, KitEffect[]> = {
       mods: [{ key: 'multBonus', value: 50 }], appliesTo: { rows: /^Basic Attack - Umbral Canopy: Engraved Heart/, label: 'Engraved Heart' } },
     { seq: 6, id: 'c.suo.s6cd', group: 'sequence', mode: SUO_MASTER, source: 'S6 · Nine Shadows at Her Side', text: 'Seal Master: Crit. DMG +200% more', mods: [{ key: 'critDmg', value: 200 }] },
   ],
+
+  Aemeath: [
+    { seq: 0, id: 'c.aem.instant', group: 'self', source: 'Inherent · Before All Sounds', text: 'In Instant Response: Heavy Attack - Aemeath / Mech DMG Amplified by 200%',
+      condition: { kind: 'toggle', label: 'In Instant Response', default: true }, mods: [{ key: 'amplify', value: 200 }], appliesTo: AEM_HEAVY },
+    { seq: 0, maxSeq: 2, id: 'c.aem.stars.tr', group: 'self', mode: AEM_RUPTURE, source: 'Inherent · Between the Stars', text: 'Each Resonator that inflicts Tune Rupture - Shifting: Crit. DMG +20% (max 3)',
+      condition: { kind: 'stacks', label: 'Resonators that inflicted Tune Rupture - Shifting', max: 3, default: 'max' }, mods: [{ key: 'critDmg', value: 20 }] },
+    { seq: 0, maxSeq: 2, id: 'c.aem.stars.fb', group: 'self', mode: AEM_BURST, source: 'Inherent · Between the Stars', text: 'Each Resonator that inflicts Fusion Burst: Crit. DMG +30% (max 2)',
+      condition: { kind: 'stacks', label: 'Resonators that inflicted Fusion Burst', max: 2, default: 'max' }, mods: [{ key: 'critDmg', value: 30 }] },
+    { seq: 0, id: 'c.aem.stars.finale', group: 'self', source: 'Inherent · Between the Stars', text: 'At full stacks (from S3: after the first trigger): Heavenfall Edict: Finale DMG Amplified by 25%',
+      condition: { kind: 'toggle', label: 'Between the Stars at full stacks', default: true }, mods: [{ key: 'amplify', value: 25 }], appliesTo: { rows: /^Heavenfall Edict: Finale DMG$/, label: 'Heavenfall Edict: Finale' } },
+    { seq: 1, id: 'c.aem.s1', group: 'sequence', source: 'S1', text: 'In Instant Response: Heavy Attack - Aemeath / Mech Crit. DMG +300%',
+      condition: { kind: 'toggle', label: 'In Instant Response', default: true, key: 'c.aem.instant' }, mods: [{ key: 'critDmg', value: 300 }], appliesTo: AEM_HEAVY },
+    { seq: 2, id: 'c.aem.s2', group: 'sequence', source: 'S2', text: 'Seraphic Duet: Overture / Encore multipliers +100%',
+      mods: [{ key: 'multBonus', value: 100 }], appliesTo: { rows: /^Seraphic Duet/, label: 'Seraphic Duet' } },
+    { seq: 3, id: 'c.aem.s3', group: 'sequence', source: 'S3', text: 'Heavenfall Edict: Finale multiplier +100%',
+      mods: [{ key: 'multBonus', value: 100 }], appliesTo: { rows: /^Heavenfall Edict: Finale DMG$/, label: 'Heavenfall Edict: Finale' } },
+    { seq: 3, id: 'c.aem.s3b', group: 'sequence', source: 'S3', text: 'Heavenfall Edict: Overdrive multiplier +40%',
+      mods: [{ key: 'multBonus', value: 40 }], appliesTo: { rows: /^Heavenfall Edict: Overdrive DMG$/, label: 'Heavenfall Edict: Overdrive' } },
+    { seq: 3, id: 'c.aem.s3cd', group: 'sequence', source: 'S3 · Between the Stars (enhanced)', text: 'After the team inflicts Tune Rupture - Shifting / Fusion Burst: Crit. DMG +60%',
+      condition: { kind: 'toggle', label: 'Team inflicted Tune Rupture - Shifting / Fusion Burst', default: true }, mods: [{ key: 'critDmg', value: 60 }] },
+    { seq: 4, team: true, id: 'c.aem.s4', group: 'sequence', source: 'S4', text: 'After Intro / Sync Strike / Seraphic Duet: team All-Attribute DMG +20%',
+      condition: { kind: 'toggle', label: 'After Intro, Sync Strike or Seraphic Duet', default: true }, mods: [{ key: 'dmgAll', value: 20 }] },
+    { seq: 6, id: 'c.aem.s6', group: 'sequence', source: 'S6', text: 'Targets take 40% more Resonance Liberation DMG from Aemeath',
+      mods: [{ key: 'amplify', value: 40 }], appliesTo: { dmgTypes: ['Liberation'] } },
+  ],
+
+  Carlotta: [
+    { seq: 0, id: 'c.carl.decon', group: 'self', source: 'Liberation · Deconstruction', text: 'Targets with Deconstruction: ignore 18% DEF',
+      condition: { kind: 'toggle', label: 'Target has Deconstruction', default: true }, mods: [{ key: 'defIgnore', value: 18 }] },
+    { seq: 0, id: 'c.carl.bow', group: 'self', source: 'Forte · Final Bow', text: 'Final Bow: Era of New Wave / Death Knell / Fatal Finale multipliers +80%',
+      condition: { kind: 'toggle', label: 'Final Bow (full Substance)', default: true }, mods: [{ key: 'multBonus', value: 80 }], appliesTo: { skillKinds: ['Liberation'] } },
+    { seq: 1, id: 'c.carl.s1', group: 'sequence', source: 'S1', text: 'Against Deconstruction: Crit. Rate +12.5%',
+      condition: { kind: 'toggle', label: 'Target has Deconstruction', default: true, key: 'c.carl.decon' }, mods: [{ key: 'critRate', value: 12.5 }] },
+    { seq: 2, id: 'c.carl.s2', group: 'sequence', source: 'S2', text: 'Fatal Finale multiplier +126%',
+      mods: [{ key: 'multBonus', value: 126 }], appliesTo: { rows: /^Fatal Finale DMG$/, label: 'Fatal Finale' } },
+    { seq: 3, id: 'c.carl.s3', group: 'sequence', source: 'S3', text: 'Art of Violence / Chromatic Splendor multipliers +93%',
+      mods: [{ key: 'multBonus', value: 93 }], appliesTo: { skillKinds: ['Skill'] } },
+    { seq: 4, team: true, id: 'c.carl.s4', group: 'sequence', source: 'S4', text: 'After a Heavy Attack: team Resonance Skill DMG +25%',
+      condition: { kind: 'toggle', label: 'After a Heavy Attack', default: true }, mods: [{ key: 'dmgSkill', value: 25 }] },
+    { seq: 5, id: 'c.carl.s5', group: 'sequence', source: 'S5', text: 'Imminent Oblivion multiplier +47%',
+      mods: [{ key: 'multBonus', value: 47 }], appliesTo: { rows: /^Imminent Oblivion DMG$/, label: 'Imminent Oblivion' } },
+    { seq: 6, id: 'c.carl.s6', group: 'sequence', source: 'S6', text: 'Death Knell multiplier +186.6%',
+      mods: [{ key: 'multBonus', value: 186.6 }], appliesTo: { rows: /^Death Knell DMG$/, label: 'Death Knell' } },
+  ],
+
+  Denia: [
+    { seq: 0, id: 'c.den.breakdown', group: 'self', source: 'Liberation · Entropy Shift: Breakdown Form', text: 'Entropy Shift: Breakdown Form: ATK +30%',
+      condition: { kind: 'toggle', label: 'Entropy Shift: Breakdown Form', default: true }, mods: [{ key: 'atkPct', value: 30 }] },
+    { seq: 0, id: 'c.den.void', group: 'self', source: 'Forte · Void Particle', text: 'Breakdown Form Basic Attacks with Void Particle: multiplier +50%',
+      condition: { kind: 'toggle', label: 'Holding Void Particle', default: true }, mods: [{ key: 'multBonus', value: 50 }], appliesTo: { skillKinds: ['Normal'], rows: /Breakdown Form/, label: 'Breakdown Form Normal Attacks' } },
+    { seq: 0, team: true, id: 'c.den.etched', group: 'self', mode: DEN_BURST, source: 'Inherent · Etched Colors', text: 'In an Entropy Shift state: team Fusion DMG +30%',
+      condition: { kind: 'toggle', label: 'Denia in an Entropy Shift state', default: true }, mods: [{ key: 'dmgFusion', value: 30 }] },
+    { seq: 1, id: 'c.den.s1', group: 'sequence', source: 'S1', text: 'Crit. DMG +30%', mods: [{ key: 'critDmg', value: 30 }] },
+    { seq: 2, team: true, id: 'c.den.s2', group: 'sequence', mode: DEN_BURST, source: 'S2', text: 'After inflicting Fusion Burst: Fusion DMG +50%',
+      condition: { kind: 'toggle', label: 'Inflicted Fusion Burst', default: true }, mods: [{ key: 'dmgFusion', value: 50 }] },
+    { seq: 2, id: 'c.den.s2res', group: 'sequence', mode: DEN_BURST, source: 'S2 · Degenerate Voidmatter', text: 'Each stack: ignore 1% Fusion RES (max 10)',
+      condition: { kind: 'stacks', label: 'Degenerate Voidmatter stacks', max: 10, default: 'max' }, mods: [{ key: 'resShred', value: 1 }], appliesTo: { element: 'Fusion' } },
+    { seq: 2, id: 'c.den.s2b', group: 'sequence', source: 'S2', text: 'Banish - Breakdown Form multiplier +40%',
+      mods: [{ key: 'multBonus', value: 40 }], appliesTo: { rows: /^Banish - Breakdown Form/, label: 'Banish - Breakdown Form' } },
+    { seq: 3, id: 'c.den.s3', group: 'sequence', source: 'S3', text: 'Final Act - Breakdown Form multiplier +80%',
+      mods: [{ key: 'multBonus', value: 80 }], appliesTo: { rows: /^Final Act - Breakdown Form DMG$/, label: 'Final Act - Breakdown Form' } },
+    { seq: 5, id: 'c.den.s5', group: 'sequence', source: 'S5', text: 'Final Act - Stagecraft Form DMG +100%',
+      mods: [{ key: 'dmgAll', value: 100 }], appliesTo: { rows: /^Final Act - Stagecraft Form DMG$/, label: 'Final Act - Stagecraft Form' } },
+    { seq: 6, id: 'c.den.s6', group: 'sequence', source: 'S6', text: 'In an Entropy Shift state: ATK +60%, Fusion DMG +60%',
+      condition: { kind: 'toggle', label: 'Denia in an Entropy Shift state', default: true, key: 'c.den.etched' }, mods: [{ key: 'atkPct', value: 60 }, { key: 'dmgFusion', value: 60 }] },
+  ],
+
+  Lynae: [
+    { seq: 0, team: true, id: 'c.lyn.lib', group: 'self', source: 'Liberation · Prismatic Overblast', text: 'After Prismatic Overblast: team deals 24% more DMG',
+      condition: { kind: 'toggle', label: 'After Prismatic Overblast', default: true }, mods: [{ key: 'amplify', value: 24 }] },
+    { seq: 0, id: 'c.lyn.optics', group: 'self', source: 'Inherent · "Adaptive Optics: Everyday Applications"', text: 'After Intro Skill: Spectro DMG +25%',
+      condition: { kind: 'toggle', label: 'After Intro Skill', default: true }, mods: [{ key: 'dmgSpectro', value: 25 }] },
+    { seq: 1, id: 'c.lyn.s1', group: 'sequence', source: 'S1', text: 'Polychrome Leap multiplier +120%',
+      mods: [{ key: 'multBonus', value: 120 }], appliesTo: { rows: /^Basic Attack - Polychrome Leap/, label: 'Polychrome Leap' } },
+    { seq: 2, id: 'c.lyn.s2', group: 'sequence', source: 'S2', text: 'All DMG Amplified by 25%', mods: [{ key: 'amplify', value: 25 }] },
+    { seq: 3, id: 'c.lyn.s3', group: 'sequence', source: 'S3', text: 'Visual Impact / Iridescent Splash multipliers +90%',
+      mods: [{ key: 'multBonus', value: 90 }], appliesTo: LYN_FINISHERS },
+    { seq: 3, id: 'c.lyn.s3hue', group: 'sequence', source: 'S3 · Premixed Hue', text: 'Each stack: Additive Color Spectro DMG +55% (max 25)',
+      condition: { kind: 'stacks', label: 'Premixed Hue stacks', max: 25, default: 'max' }, mods: [{ key: 'dmgSpectro', value: 55 }], appliesTo: { rows: /^Additive Color DMG$/, label: 'Additive Color' } },
+    { seq: 4, id: 'c.lyn.s4', group: 'sequence', source: 'S4', text: 'ATK +20%', mods: [{ key: 'atkPct', value: 20 }] },
+    { seq: 5, id: 'c.lyn.s5', group: 'sequence', source: 'S5', text: 'Prismatic Overblast multiplier +70%',
+      mods: [{ key: 'multBonus', value: 70 }], appliesTo: { rows: /^Prismatic Overblast DMG$/, label: 'Prismatic Overblast' } },
+    { seq: 6, id: 'c.lyn.s6', group: 'sequence', source: 'S6 · Color of Soul', text: 'Each stack: Visual Impact / Iridescent Splash deal 30% more DMG (max 3)',
+      condition: { kind: 'stacks', label: 'Color of Soul stacks', max: 3, default: 'max' }, mods: [{ key: 'amplify', value: 30 }], appliesTo: LYN_FINISHERS },
+  ],
+
+  Mornye: [
+    { seq: 0, id: 'c.mor.er', group: 'self', source: 'Liberation · Critical Protocol', text: 'Crit. Rate and Crit. DMG from Energy Regen over 100%',
+      mods: [{ key: 'critRate', value: 0, fromStat: { stat: 'energyRegen', over: 100, per: 0.5, max: 80 } }, { key: 'critDmg', value: 0, fromStat: { stat: 'energyRegen', over: 100, per: 1, max: 160 } }],
+      appliesTo: MOR_LIB },
+    { seq: 0, id: 'c.mor.blueprint', group: 'self', source: 'Inherent · Blueprint', text: 'Energy Regen +10%', mods: [{ key: 'energyRegen', value: 10 }] },
+    { seq: 0, team: true, id: 'c.mor.high', group: 'self', source: 'Liberation · High Syntony Field', text: 'Inside High Syntony Field: DEF +20%',
+      condition: { kind: 'toggle', label: 'Inside High Syntony Field', default: true }, mods: [{ key: 'defPct', value: 20 }] },
+    { seq: 2, id: 'c.mor.s2', group: 'sequence', source: 'S2', text: 'Against Interfered Marker: Crit. DMG from Energy Regen over 100% (max 32%)',
+      condition: { kind: 'toggle', label: 'Target has Interfered Marker', default: true },
+      mods: [{ key: 'critDmg', value: 0, fromStat: { stat: 'energyRegen', over: 100, per: 0.2, max: 32 } }], appliesTo: { rows: /./, label: 'all hits' } },
+    { seq: 5, id: 'c.mor.s5', group: 'sequence', source: 'S5', text: 'Critical Protocol multiplier +40%', mods: [{ key: 'multBonus', value: 40 }], appliesTo: MOR_LIB },
+    { seq: 6, id: 'c.mor.s6', group: 'sequence', source: 'S6', text: 'Critical Protocol deals 400% more DMG', mods: [{ key: 'amplify', value: 400 }], appliesTo: MOR_LIB },
+  ],
+
+  Shorekeeper: [
+    { seq: 0, id: 'c.sk.inner', group: 'self', source: 'Liberation · Inner Stellarealm', text: 'Crit. Rate: 0.05% per 1% of Energy Regen (max 12.5%)',
+      condition: { kind: 'toggle', label: 'Inner Stellarealm (or Supernal)', default: true },
+      mods: [{ key: 'critRate', value: 0, fromStat: { stat: 'energyRegen', over: 0, per: 0.05, max: 12.5 } }], appliesTo: { rows: /./, label: 'all hits' } },
+    { seq: 0, id: 'c.sk.supernal', group: 'self', source: 'Liberation · Supernal Stellarealm', text: 'Crit. DMG: 0.1% per 1% of Energy Regen (max 25%)',
+      condition: { kind: 'toggle', label: 'Supernal Stellarealm', default: true },
+      mods: [{ key: 'critDmg', value: 0, fromStat: { stat: 'energyRegen', over: 0, per: 0.1, max: 25 } }], appliesTo: { rows: /./, label: 'all hits' } },
+    { seq: 0, id: 'c.sk.gravity', group: 'self', source: 'Inherent · Self Gravitation', text: 'Inside a Stellarealm: Energy Regen +10%',
+      condition: { kind: 'toggle', label: 'Inside a Stellarealm', default: true }, mods: [{ key: 'energyRegen', value: 10 }] },
+    { seq: 0, id: 'c.sk.discern', group: 'self', source: 'Intro · Discernment', text: 'Discernment is always a Critical Hit',
+      mods: [{ key: 'critRate', value: 100 }], appliesTo: SK_DISCERN },
+    { seq: 2, team: true, id: 'c.sk.s2', group: 'sequence', source: 'S2', text: 'Inside the Stellarealm: ATK +40%',
+      condition: { kind: 'toggle', label: 'Inside the Stellarealm', default: true }, mods: [{ key: 'atkPct', value: 40 }] },
+    { seq: 6, id: 'c.sk.s6', group: 'sequence', source: 'S6', text: 'Discernment multiplier +42%, Crit. DMG +500%',
+      mods: [{ key: 'multBonus', value: 42 }, { key: 'critDmg', value: 500 }], appliesTo: SK_DISCERN },
+  ],
+
+  Zhezhi: [
+    { seq: 0, id: 'c.zz.touch', group: 'self', source: "Inherent · Calligrapher's Touch", text: "Each Stroke of Genius / Creation's Zenith: ATK +6% (max 3)",
+      condition: { kind: 'stacks', label: "Calligrapher's Touch stacks", max: 3, default: 'max' }, mods: [{ key: 'atkPct', value: 6 }] },
+    { seq: 0, id: 'c.zz.zenith', group: 'self', source: "Forte · Creation's Zenith", text: "After Creation's Zenith: Basic Attack DMG +18%",
+      condition: { kind: 'toggle', label: "After Creation's Zenith", default: true }, mods: [{ key: 'dmgBasic', value: 18 }] },
+    { seq: 1, id: 'c.zz.s1', group: 'sequence', source: 'S1', text: "After Creation's Zenith: Crit. Rate +10%",
+      condition: { kind: 'toggle', label: "After Creation's Zenith", default: true, key: 'c.zz.zenith' }, mods: [{ key: 'critRate', value: 10 }] },
+    { seq: 3, id: 'c.zz.s3', group: 'sequence', source: 'S3', text: 'Each Resonance Skill: ATK +15% (max 3)',
+      condition: { kind: 'stacks', label: 'S3 ATK stacks', max: 3, default: 'max' }, mods: [{ key: 'atkPct', value: 15 }] },
+    { seq: 4, team: true, id: 'c.zz.s4', group: 'sequence', source: 'S4', text: 'After Living Canvas: team ATK +20%',
+      condition: { kind: 'toggle', label: 'After Living Canvas', default: true }, mods: [{ key: 'atkPct', value: 20 }] },
+  ],
+
+  Lupa: [
+    { seq: 0, id: 'c.lupa.banner', group: 'self', source: 'Forte · Wildfire Banner', text: 'After Feral Fang / Wolf\'s attacks / Liberation: ATK +12%',
+      condition: { kind: 'toggle', label: 'Wildfire Banner active', default: true }, mods: [{ key: 'atkPct', value: 12 }] },
+    { seq: 0, team: true, id: 'c.lupa.pack', group: 'self', source: 'Liberation · Pack Hunt', text: 'Pack Hunt: ATK +6% per stack (max 18%)',
+      condition: { kind: 'stacks', label: 'Pack Hunt stacks', max: 3, default: 'max' }, mods: [{ key: 'atkPct', value: 6 }] },
+    { seq: 0, maxSeq: 2, team: true, id: 'c.lupa.packboss', group: 'self', source: 'Liberation · Pack Hunt', text: 'Against Overlord / Calamity: Fusion DMG +10% (+10% with 3 Fusion Resonators)',
+      condition: { kind: 'stacks', label: 'Pack Hunt vs boss (1 = boss, 2 = boss with 3 Fusion Resonators)', max: 2, default: 0 }, mods: [{ key: 'dmgFusion', value: 10 }] },
+    { seq: 0, maxSeq: 2, team: true, id: 'c.lupa.glory', group: 'self', source: 'Inherent · Applause of Victory (Glory)', text: 'Glory: ignore 3% Fusion RES, +3% per other Fusion Resonator; 15% with 3 Fusion Resonators',
+      condition: { kind: 'stacks', label: 'Other Fusion Resonators in the team', max: 2, default: 0 }, mods: [{ key: 'resShred', value: 0, byStacks: [3, 6, 15] }], appliesTo: { element: 'Fusion' } },
+    { seq: 1, id: 'c.lupa.s1', group: 'sequence', source: 'S1', text: 'After Fire-Kissed Glory: Crit. Rate +20%',
+      condition: { kind: 'toggle', label: 'After Fire-Kissed Glory', default: true }, mods: [{ key: 'critRate', value: 20 }] },
+    { seq: 2, team: true, id: 'c.lupa.s2', group: 'sequence', source: 'S2', text: 'Each Glory / Wolf\'s attack: team Fusion DMG +20% (max 2)',
+      condition: { kind: 'stacks', label: 'S2 Fusion DMG stacks', max: 2, default: 'max' }, mods: [{ key: 'dmgFusion', value: 20 }] },
+    { seq: 3, team: true, id: 'c.lupa.s3boss', group: 'sequence', source: 'S3 · Pack Hunt', text: 'Against Overlord / Calamity: Fusion DMG +20% (no Fusion team needed)',
+      condition: { kind: 'toggle', label: 'Target is Overlord / Calamity', default: true }, mods: [{ key: 'dmgFusion', value: 20 }] },
+    { seq: 3, team: true, id: 'c.lupa.s3glory', group: 'sequence', source: 'S3 · Glory', text: 'Glory: ignore 15% Fusion RES',
+      mods: [{ key: 'resShred', value: 15 }], appliesTo: { element: 'Fusion' } },
+    { seq: 3, id: 'c.lupa.s3', group: 'sequence', source: 'S3', text: 'Nowhere to Run! multiplier +100%',
+      mods: [{ key: 'multBonus', value: 100 }], appliesTo: { rows: /^Nowhere to Run! DMG$/, label: 'Nowhere to Run!' } },
+    { seq: 4, id: 'c.lupa.s4', group: 'sequence', source: 'S4', text: 'Dance With the Wolf: Climax multiplier +125%',
+      mods: [{ key: 'multBonus', value: 125 }], appliesTo: { rows: /^Dance With the Wolf: Climax DMG$/, label: 'Dance With the Wolf: Climax' } },
+    { seq: 5, id: 'c.lupa.s5', group: 'sequence', source: 'S5', text: 'After Intro Skill: Resonance Liberation DMG +15%',
+      condition: { kind: 'toggle', label: 'After Intro Skill', default: true }, mods: [{ key: 'dmgLib', value: 15 }] },
+    { seq: 6, id: 'c.lupa.s6', group: 'sequence', source: 'S6', text: 'Dance With the Wolf: Climax / Nowhere to Run! ignore 30% DEF',
+      mods: [{ key: 'defIgnore', value: 30 }], appliesTo: { rows: /^(Dance With the Wolf: Climax|Nowhere to Run!) DMG$/, label: 'Climax and Nowhere to Run!' } },
+    { seq: 6, id: 'c.lupa.s6lib', group: 'sequence', source: 'S6', text: 'Fire-Kissed Glory ignores 30% DEF',
+      mods: [{ key: 'defIgnore', value: 30 }], appliesTo: { skillKinds: ['Liberation'], rows: /^Skill Damage$/, label: 'Fire-Kissed Glory' } },
+  ],
+
+  Galbrena: [
+    { seq: 0, id: 'c.gal.drive', group: 'self', source: 'Forte · Burning Drive', text: 'Burning Drive: ATK +20% (S2: +90%)',
+      condition: { kind: 'toggle', label: 'Burning Drive active', default: true }, mods: [{ key: 'atkPct', value: 20 }] },
+    { seq: 0, id: 'c.gal.after', group: 'self', source: 'Forte · Demon Hypostasis', text: 'Each point of Afterflame: Demon Hypostasis attacks DMG +1.5% (max 60%)',
+      condition: { kind: 'stacks', label: 'Afterflame', max: 40, default: 'max' }, mods: [{ key: 'dmgAll', value: 1.5 }], appliesTo: GAL_DEMON },
+    { seq: 0, id: 'c.gal.lib', group: 'self', source: 'Liberation · Hellfire Absolution', text: 'After Hellfire Absolution: Demon Hypostasis attack multipliers +85%',
+      condition: { kind: 'toggle', label: 'After Hellfire Absolution', default: true }, mods: [{ key: 'multBonus', value: 85 }], appliesTo: GAL_DEMON_NORMAL },
+    { seq: 0, id: 'c.gal.fated', group: 'self', source: 'Inherent · Oathbound Hunt', text: 'Each Fated End stack: Galbrena\'s DMG Amplified by 5% (max 4)',
+      condition: { kind: 'stacks', label: 'Fated End stacks', max: 4, default: 'max' }, mods: [{ key: 'amplify', value: 5 }] },
+    { seq: 1, id: 'c.gal.s1', group: 'sequence', source: 'S1', text: 'Each point of Afterflame: Demon Hypostasis attacks Crit. DMG +2% (max 80%)',
+      condition: { kind: 'stacks', label: 'Afterflame', max: 40, default: 'max', key: 'c.gal.after' }, mods: [{ key: 'critDmg', value: 2 }], appliesTo: GAL_DEMON },
+    { seq: 2, id: 'c.gal.s2', group: 'sequence', source: 'S2', text: 'Burning Drive ATK +70% more (90% total)',
+      condition: { kind: 'toggle', label: 'Burning Drive active', default: true, key: 'c.gal.drive' }, mods: [{ key: 'atkPct', value: 70 }] },
+    { seq: 3, id: 'c.gal.s3', group: 'sequence', source: 'S3', text: 'Resonance Liberation multiplier +130%', mods: [{ key: 'multBonus', value: 130 }], appliesTo: { skillKinds: ['Liberation'] } },
+    { seq: 4, team: true, id: 'c.gal.s4', group: 'sequence', source: 'S4', text: 'After an Echo Skill: team All-Attribute DMG +20%',
+      condition: { kind: 'toggle', label: 'After an Echo Skill', default: true }, mods: [{ key: 'dmgAll', value: 20 }] },
+    { seq: 5, id: 'c.gal.s5', group: 'sequence', source: 'S5', text: 'Encroach / Ascent of Malice / Ravage multipliers +150%',
+      mods: [{ key: 'multBonus', value: 150 }], appliesTo: { rows: /^Resonance Skill - (Encroach|Ascent of Malice|Ravage) DMG$/, label: 'Encroach, Ascent of Malice and Ravage' } },
+    { seq: 6, id: 'c.gal.s6', group: 'sequence', source: 'S6', text: 'Eternal Hypostasis attack multipliers +60%', mods: [{ key: 'multBonus', value: 60 }], appliesTo: GAL_DEMON_NORMAL },
+    { seq: 6, id: 'c.gal.s6amp', group: 'sequence', source: 'S6', text: 'Each point of Afterflame: Fusion DMG Amplified by 0.875% (max 35%)',
+      condition: { kind: 'stacks', label: 'Afterflame', max: 40, default: 'max', key: 'c.gal.after' }, mods: [{ key: 'amplify', value: 0.875 }], appliesTo: GAL_DEMON },
+  ],
+
+  'Luuk Herssen': [
+    { seq: 0, id: 'c.luuk.judge', group: 'self', source: 'Forte · Aureate Judge', text: 'Aureate Judge: Aureole of Execution multipliers +110%; after Glare, Gavel / Ichor Deposit +110%',
+      condition: { kind: 'toggle', label: 'Aureate Judge', default: true }, mods: [{ key: 'multBonus', value: 110 }], appliesTo: LUUK_AUREOLE },
+    { seq: 0, id: 'c.luuk.endnotes', group: 'self', source: 'Skill · Endnotes on the Endgame', text: 'Each stack: Rewritten in Winter\'s Margins multiplier +25% (max 3)',
+      condition: { kind: 'stacks', label: 'Endnotes on the Endgame stacks', max: 3, default: 'max' }, mods: [{ key: 'multBonus', value: 25 }], appliesTo: { skillKinds: ['Liberation'] } },
+    { seq: 0, id: 'c.luuk.diag', group: 'self', source: 'Inherent · Uncaused Diagnosis', text: 'Against Tune Strain - Interfered: 5% more DMG per 10 Tune Break Boost (max 30%)',
+      condition: { kind: 'stacks', label: 'Tune Break Boost (in tens)', max: 6, default: 0 }, mods: [{ key: 'amplify', value: 5 }] },
+    { seq: 0, id: 'c.luuk.atk', group: 'self', source: 'Inherent · Uncaused Diagnosis', text: 'After the team inflicts Tune Strain - Shifting: ATK +25%',
+      condition: { kind: 'toggle', label: 'Team inflicted Tune Strain - Shifting', default: true }, mods: [{ key: 'atkPct', value: 25 }] },
+    { seq: 1, id: 'c.luuk.s1', group: 'sequence', source: 'S1', text: 'Mid-air Attack DMG +150%', mods: [{ key: 'dmgAll', value: 150 }], appliesTo: { rows: /^Mid-air Attack/, label: 'Mid-air Attacks' } },
+    { seq: 2, id: 'c.luuk.s2', group: 'sequence', source: 'S2', text: 'Rewritten in Winter\'s Margins multiplier +60%', mods: [{ key: 'multBonus', value: 60 }], appliesTo: { skillKinds: ['Liberation'] } },
+    { seq: 2, id: 'c.luuk.s2diag', group: 'sequence', source: 'S2 · Uncaused Diagnosis', text: '10% per 10 Tune Break Boost instead of 5% (max 60%)',
+      condition: { kind: 'stacks', label: 'Tune Break Boost (in tens)', max: 6, default: 0, key: 'c.luuk.diag' }, mods: [{ key: 'amplify', value: 5 }] },
+    { seq: 3, id: 'c.luuk.s3', group: 'sequence', source: 'S3', text: 'Aureate Judge: Aureole / Gavel / Ichor Deposit multipliers +136% more',
+      condition: { kind: 'toggle', label: 'Aureate Judge', default: true, key: 'c.luuk.judge' }, mods: [{ key: 'multBonus', value: 136 }], appliesTo: LUUK_AUREOLE },
+    { seq: 4, team: true, id: 'c.luuk.s4', group: 'sequence', source: 'S4', text: 'After Tune Break DMG: team deals 20% more DMG',
+      condition: { kind: 'toggle', label: 'Team dealt Tune Break DMG', default: true }, mods: [{ key: 'amplify', value: 20 }] },
+    { seq: 5, id: 'c.luuk.s5', group: 'sequence', source: 'S5', text: 'Intro Skill DMG +80%', mods: [{ key: 'dmgAll', value: 80 }], appliesTo: { skillKinds: ['Intro'] } },
+    { seq: 5, id: 'c.luuk.s5b', group: 'sequence', source: 'S5', text: 'Golden Reflux multiplier +50%', mods: [{ key: 'multBonus', value: 50 }], appliesTo: { rows: /^Golden Reflux DMG$/, label: 'Golden Reflux' } },
+    { seq: 6, id: 'c.luuk.s6', group: 'sequence', source: 'S6', text: 'After Tune Break DMG: Aureole / Ichor Deposit / Gavel deal 30% more DMG',
+      condition: { kind: 'toggle', label: 'Team dealt Tune Break DMG', default: true, key: 'c.luuk.s4' }, mods: [{ key: 'amplify', value: 30 }], appliesTo: LUUK_AUREOLE },
+    { seq: 6, id: 'c.luuk.s6lib', group: 'sequence', source: 'S6', text: 'Each Endnotes stack: Rewritten in Winter\'s Margins DMG +40%',
+      condition: { kind: 'stacks', label: 'Endnotes on the Endgame stacks', max: 3, default: 'max', key: 'c.luuk.endnotes' }, mods: [{ key: 'dmgAll', value: 40 }], appliesTo: { skillKinds: ['Liberation'] } },
+  ],
 };
 
 /** Shown in the UI so users know these parts of the kit aren't in the numbers yet. */
@@ -263,10 +481,18 @@ export const NOT_MODELLED: Record<string, string[]> = {
   'Rover: Electro': ['Electro Flare DMG (Overshock 10 stacks, S2 5 stacks)'],
   Lily: ['Healing and shields', 'Dream Aroma / Silvered Dream (buffs for teammates — see the Team tab)'],
   Suoming: ['Unison Boon for teammates beyond Suoming herself', 'Aligned Seals / S2 Outro buffs (see the Team tab)'],
+  Aemeath: ['Tune Rupture / Fusion Burst DMG (Trails, Starburst, S2 and S6 effects)'],
+  Carlotta: ['S3 Kaleidoscope Sparks Outro hit'],
+  Denia: ['Fusion Burst DMG and its Outro Amplify', 'Tune Break Boost (Tune Strain mode)', 'Void Particle hits counting as Resonance Liberation DMG', 'S3 Dark Core 1200% hit'],
+  Lynae: ['Tune Rupture DMG and Tune Break Boost'],
+  Mornye: ['Healing, Interfered Marker DMG increase', 'Tune Rupture Response - Particle Jet bonus (S5)'],
+  Shorekeeper: ['Healing'],
+  Zhezhi: ['S5 extra Inklit Spirits and S6 extra Ivory Herald'],
+  'Luuk Herssen': ['Tune Strain - Interfered stacking'],
 };
 
 /** Kits written from the game text only — not yet compared with in-game stat screens. */
-export const UNVERIFIED = new Set(['Hsin', 'Suisui', 'Lucilla', 'Ciaccona', 'Rover: Electro', 'Lily', 'Suoming']);
+export const UNVERIFIED = new Set(['Hsin', 'Suisui', 'Lucilla', 'Ciaccona', 'Rover: Electro', 'Lily', 'Suoming', 'Aemeath', 'Carlotta', 'Denia', 'Lynae', 'Mornye', 'Shorekeeper', 'Zhezhi', 'Lupa', 'Galbrena', 'Luuk Herssen']);
 
 export const characterEffects = (name: string, sequence: number): Effect[] =>
   (KITS[name] ?? []).filter((e) => sequence >= e.seq && (e.maxSeq === undefined || sequence <= e.maxSeq));
