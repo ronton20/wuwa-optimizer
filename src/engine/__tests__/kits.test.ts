@@ -133,4 +133,12 @@ describe('new kits', () => {
     const withZhezhi = hit(build('Carlotta', { team: [mate('Zhezhi'), mate('Shorekeeper')] }), 'Death Knell DMG');
     expect(withZhezhi.zones.amplify - solo).toBeCloseTo(20 + 25 + 15, 6); // Glacio + Skill (Zhezhi), all (Shorekeeper)
   });
+
+  it("a linked teammate brings their own build's weapon, main echo and set", () => {
+    const own = { ...defaultBuild(char('Lucilla').id), weapon: { id: data.weapons.find((w) => w.name === 'Freeze Frame')!.id, rank: 1 } };
+    const b = build('Hiyuki', { team: [{ characterId: char('Lucilla').id, sequence: 0, custom: [], linked: true, build: own }] });
+    const sources = collectEffects(b, data).filter((e) => e.group === 'team').map((e) => e.source);
+    expect(sources.some((x) => x.includes('Freeze Frame'))).toBe(true);
+  });
 });
+

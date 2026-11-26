@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { MAX_PINNED, defaultBuild, useBuilds } from '../buildStore';
+import { MAX_PINNED, defaultBuild, teamBuild, useBuilds } from '../buildStore';
 
 const HIYUKI = 1108;
 const S = () => useBuilds.getState();
@@ -51,5 +51,46 @@ describe('saved builds, compare pins and shared copies', () => {
     S().keepShared('copy', 'From a friend');
     expect(S().builds[HIYUKI]).toBeUndefined();
     expect(S().saved.map((s) => [s.name, s.build.sequence])).toEqual([['From a friend', 4]]);
+  });
+});
+
+describe('teams of full builds', () => {
+  it('saving a team links each member to the other two, and teammates follow later edits', async () => {
+    const { useBuilds, linkTeam } = await import('../buildStore');
+    const data = (await import('../../data/current')).default;
+    const id = (n: string) => data.characters.find((c) => c.name === n)!.id;
+    const [hiyuki, lucilla, suisui] = [id('Hiyuki'), id('Lucilla'), id('Suisui')];
+    useBuilds.getState().importAll({});
+    useBuilds.getState().saveTeam({ name: 'Glacio', members: [hiyuki, lucilla, suisui] });
+    const s = useBuilds.getState();
+    expect(s.teams).toHaveLength(1);
+    expect(s.mainTeam).toBe(s.teams[0].id);
+    expect(s.builds[hiyuki].team?.map((t) => [t?.characterId, t?.linked])).toEqual([[lucilla, true], [suisui, true]]);
+
+    // edit Lucilla: Hiyuki's view of her follows, and nothing is copied into storage
+    s.update(lucilla, (b) => ({ ...b, sequence: 4 }));
+    const after = useBuilds.getState();
+    expect(after.builds[hiyuki].team?.[0]?.build).toBeUndefined();
+    expect(linkTeam(after.builds[hiyuki], after.builds).team?.[0]?.build?.sequence).toBe(4);
+  });
+});
+
+describe('rotations', () => {
+  beforeEach(() => S().importAll({}));
+
+  it('a team member without teammates set gets the other members, following my builds', () => {
+    const b = teamBuild(HIYUKI, [HIYUKI, 1109, 1110], { 1109: { ...defaultBuild(1109), sequence: 2 } });
+    expect(b.team?.map((t) => t?.characterId)).toEqual([1109, 1110]);
+    expect(b.team?.[0]?.build?.sequence).toBe(2);
+  });
+
+  it('rotations are saved per team and go with the team', () => {
+    const team = S().saveTeam({ name: 'Frost', members: [HIYUKI, 1109, 1110] });
+    S().saveRotation({ id: 'r1', name: 'R', teamId: team, steps: [{ char: HIYUKI, button: 'basic' }] });
+    S().saveRotation({ id: 'r1', name: 'R2', teamId: team, steps: [] });
+    expect(S().rotations).toHaveLength(1);
+    expect(S().rotations[0].name).toBe('R2');
+    S().deleteTeam(team);
+    expect(S().rotations).toHaveLength(0);
   });
 });

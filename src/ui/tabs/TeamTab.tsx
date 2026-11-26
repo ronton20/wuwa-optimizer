@@ -1,11 +1,11 @@
 import type { ReactNode } from 'react';
 import data from '../../data/current';
-import { TEAM_ECHOES, TEAM_NOT_MODELLED, TEAM_SETS, echoBaseName, inMode, modeChoice, signatureOf, teammateEffects } from '../../engine';
+import { TEAM_ECHOES, TEAM_NOT_MODELLED, TEAM_SETS, echoBaseName, inMode, modeChoice, signatureOf, teammateEffects, teammateView } from '../../engine';
 import type { Character } from '../../data/types';
 import { IconSelect, type SelectOption } from '../components/IconSelect';
 import type { ModKey, Teammate } from '../../engine/types';
 import { useBuild, useBuilds } from '../../state/buildStore';
-import { Pips, SectionTitle, Segmented } from '../components/kit';
+import { Pips, SectionTitle, Segmented, Toggle } from '../components/kit';
 import { ELEMENT_COLOR, echoImg, img } from '../theme';
 import { modLabel, valueLines } from '../effectText';
 
@@ -64,6 +64,7 @@ export function TeamTab({ characterId }: { characterId: number }) {
 
   return (
     <div className="space-y-6">
+      <TeamPicker characterId={characterId} mates={team.map((t) => t?.characterId).filter((x): x is number => x !== undefined)} />
       <p className="text-sm text-muted">Teammates only add what reaches the on-field Resonator: Outros, team-wide sequences, and team buffs from their weapon, main echo and set. Toggle them in Buffs.</p>
       <div className="grid gap-4 xl:grid-cols-2">
         {team.map((t, i) => (
@@ -74,11 +75,65 @@ export function TeamTab({ characterId }: { characterId: number }) {
   );
 }
 
+/** Pick one of your saved teams (sets the teammates of all three), save the current one, open its rotation. */
+function TeamPicker({ characterId, mates }: { characterId: number; mates: number[] }) {
+  const teams = useBuilds((s) => s.teams);
+  const { saveTeam, showTeam } = useBuilds.getState();
+  const mine = teams.filter((t) => t.members.includes(characterId));
+  const same = (t: { members: number[] }) => {
+    const others = t.members.filter((m) => m !== characterId);
+    return others.length === mates.length && others.every((m) => mates.includes(m));
+  };
+  const current = mine.find(same);
+  const name = (id: number) => data.characters.find((c) => c.id === id)?.name ?? '?';
+  return (
+    <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="text-xs uppercase tracking-[0.18em] text-muted">Team</span>
+        {current
+          ? <span className="font-display tracking-wide">{current.name}</span>
+          : <span className="text-sm text-muted">{mates.length ? 'These teammates aren\'t a saved team yet' : 'No teammates yet'}</span>}
+        <div className="ml-auto flex flex-wrap gap-2 text-sm">
+          {current && (
+            <button onClick={() => showTeam(current.id)} className="rounded-full border border-gold/50 px-3 py-1 text-gold-soft hover:border-gold hover:text-gold">Rotation →</button>
+          )}
+          {!current && mates.length > 0 && (
+            <button onClick={() => {
+              const n = prompt('Team name', [characterId, ...mates].map(name).join(' / '));
+              if (n !== null) showTeam(saveTeam({ name: n || 'Team', members: [characterId, ...mates] }));
+            }} className="rounded-full border border-gold/50 px-3 py-1 text-gold-soft hover:border-gold hover:text-gold">Save as team · Rotation →</button>
+          )}
+        </div>
+      </div>
+      {mine.filter((t) => t !== current).length > 0 && (
+        <div className="mt-3 flex flex-wrap items-center gap-2 text-sm">
+          <span className="text-xs text-muted">Use a saved team:</span>
+          {mine.filter((t) => t !== current).map((t) => (
+            <button key={t.id} onClick={() => saveTeam(t)} title={`Teammates of all three become the other two: ${t.members.map(name).join(', ')}`}
+              className="rounded-full border border-white/15 px-3 py-1 text-muted hover:border-[var(--accent)] hover:text-ink">
+              {t.name} <span className="text-xs">({t.members.filter((m) => m !== characterId).map(name).join(', ')})</span>
+            </button>
+          ))}
+          {mine.filter((t) => t !== current).map((t) => (
+            <button key={`r-${t.id}`} onClick={() => { saveTeam(t); showTeam(t.id); }} className="text-xs text-muted hover:text-gold">{t.name} rotation →</button>
+          ))}
+        </div>
+      )}
+      <p className="mt-2 text-xs text-muted">Picking a team sets the teammates of all three Resonators, so each one's Damage and Optimize tabs use the others' builds.</p>
+    </div>
+  );
+}
+
 function SlotCard({ slot, t, self, other, onChange }: { slot: number; t: Teammate | null; self: number; other?: number; onChange: (t: Teammate | null) => void }) {
   const choices = data.characters.filter((c) => c.id !== self && c.id !== other).sort((a, b) => b.rarity - a.rarity || a.name.localeCompare(b.name));
   const c = t && data.characters.find((x) => x.id === t.characterId);
   const build = useBuild(self);
   const update = useBuilds((s) => s.update);
+  const select = useBuilds((s) => s.select);
+  const mine = useBuilds((s) => s.builds);
+  const hasMine = !!t && !!mine[t.characterId];
+  const linked = !!t?.linked && hasMine;
+  const view = t && teammateView(t, data);
   const onField = data.characters.find((x) => x.id === self)?.name;
   const all = t ? teammateEffects(t, slot, data, onField) : [];
   // a teammate with Resonance Modes (Hsin, Lucilla…) gives different buffs per mode
@@ -102,6 +157,8 @@ function SlotCard({ slot, t, self, other, onChange }: { slot: number; t: Teammat
           onChange={(v) => {
             const x = data.characters.find((y) => y.id === Number(v));
             if (!x || t?.characterId === x.id) return;
+            // one of my Resonators: follow my build of them; anyone else: a hand-set teammate
+            if (mine[x.id]) return onChange({ characterId: x.id, sequence: mine[x.id].sequence, custom: [], linked: true });
             const sig = signatureOf(x.name, data);
             onChange({ characterId: x.id, sequence: 0, weapon: sig && { id: sig.id, rank: 1 }, custom: [] });
           }} />
@@ -109,31 +166,56 @@ function SlotCard({ slot, t, self, other, onChange }: { slot: number; t: Teammat
 
       {t && c && (
         <div className="space-y-4 text-sm">
-          <Row label="Sequence">
-            <div className="flex items-center gap-3">
-              <Pips count={6} value={t.sequence} onChange={(n) => onChange({ ...t, sequence: n === t.sequence ? 0 : n })} label="Sequence" />
-              <span className="text-muted">S{t.sequence}</span>
+          {hasMine && (
+            <Row label="Build">
+              <div className="flex flex-wrap items-center gap-3">
+                <Toggle on={linked} label="Use my build" onChange={(on) => onChange(on
+                  ? { ...t, linked: true, build: undefined }
+                  // switching off keeps what my build had, now editable by hand
+                  : { ...teammateView(t, data), linked: false, build: undefined })} />
+                <span className="text-muted">{linked ? 'Uses my build' : 'Set by hand'}</span>
+                {linked && <button onClick={() => select(t.characterId)} className="text-xs text-muted hover:text-gold">Edit {c.name}'s build →</button>}
+              </div>
+            </Row>
+          )}
+
+          {linked && view ? (
+            <div className="grid gap-2 rounded-lg bg-white/5 p-3 text-xs sm:grid-cols-2">
+              <span><span className="text-muted">Sequence </span>S{view.sequence}</span>
+              <span className="flex min-w-0 items-center gap-1.5">{view.weapon && <img src={img(`weapon:${view.weapon.id}`)} alt="" className="h-5 w-5" />}
+                <span className="truncate">{view.weapon ? `${data.weapons.find((w) => w.id === view.weapon!.id)?.name} R${view.weapon.rank}` : 'No weapon'}</span></span>
+              <span className="truncate"><span className="text-muted">Main echo </span>{view.mainEcho ?? 'none'}</span>
+              <span className="truncate"><span className="text-muted">Set </span>{view.set ?? 'no full set'}</span>
             </div>
-          </Row>
+          ) : (
+            <>
+            <Row label="Sequence">
+              <div className="flex items-center gap-3">
+                <Pips count={6} value={t.sequence} onChange={(n) => onChange({ ...t, sequence: n === t.sequence ? 0 : n })} label="Sequence" />
+                <span className="text-muted">S{t.sequence}</span>
+              </div>
+            </Row>
 
-          <Row label="Weapon">
-            <div className="flex min-w-0 gap-2">
-              <IconSelect ariaLabel="Weapon" iconShape="wide" className="flex-1" value={t.weapon ? String(t.weapon.id) : NONE} options={weaponOptions(c)}
-                onChange={(v) => onChange({ ...t, weapon: v ? { id: Number(v), rank: t.weapon?.rank ?? 1 } : undefined })} />
-              {t.weapon && <select value={t.weapon.rank} onChange={(e) => onChange({ ...t, weapon: { ...t.weapon!, rank: Number(e.target.value) } })} aria-label="Weapon rank"
-                className="rounded-lg border border-white/10 bg-night-900 px-2 py-1.5">
-                {[1, 2, 3, 4, 5].map((r) => <option key={r} value={r}>R{r}</option>)}
-              </select>}
-            </div>
-          </Row>
+            <Row label="Weapon">
+              <div className="flex min-w-0 gap-2">
+                <IconSelect ariaLabel="Weapon" iconShape="wide" className="flex-1" value={t.weapon ? String(t.weapon.id) : NONE} options={weaponOptions(c)}
+                  onChange={(v) => onChange({ ...t, weapon: v ? { id: Number(v), rank: t.weapon?.rank ?? 1 } : undefined })} />
+                {t.weapon && <select value={t.weapon.rank} onChange={(e) => onChange({ ...t, weapon: { ...t.weapon!, rank: Number(e.target.value) } })} aria-label="Weapon rank"
+                  className="rounded-lg border border-white/10 bg-night-900 px-2 py-1.5">
+                  {[1, 2, 3, 4, 5].map((r) => <option key={r} value={r}>R{r}</option>)}
+                </select>}
+              </div>
+            </Row>
 
-          <Row label="Main echo">
-            <IconSelect ariaLabel="Main echo" value={t.mainEcho ? echoBaseName(t.mainEcho) : NONE} options={ECHO_OPTIONS} onChange={(v) => onChange({ ...t, mainEcho: v || undefined })} />
-          </Row>
+            <Row label="Main echo">
+              <IconSelect ariaLabel="Main echo" value={t.mainEcho ? echoBaseName(t.mainEcho) : NONE} options={ECHO_OPTIONS} onChange={(v) => onChange({ ...t, mainEcho: v || undefined })} />
+            </Row>
 
-          <Row label="Sonata set">
-            <IconSelect ariaLabel="Sonata set" iconShape="round" value={t.set ?? NONE} options={SET_OPTIONS} onChange={(v) => onChange({ ...t, set: v || undefined })} />
-          </Row>
+            <Row label="Sonata set">
+              <IconSelect ariaLabel="Sonata set" iconShape="round" value={t.set ?? NONE} options={SET_OPTIONS} onChange={(v) => onChange({ ...t, set: v || undefined })} />
+            </Row>
+            </>
+          )}
 
           <Row label="Other buffs" wide>
             <div className="space-y-1.5">

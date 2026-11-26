@@ -46,7 +46,25 @@ export function collectEffects(build: Build, data: GameData): Effect[] {
 }
 
 /** Everything a teammate gives the on-field Resonator. Ids/keys are prefixed per slot ("t1.", "t2."). */
-export function teammateEffects(t: Teammate, slot: number, data: GameData, onField?: string): Effect[] {
+/** What a teammate brings. A linked teammate's sequence, weapon, main echo and set come from their own build. */
+export function teammateView(t: Teammate, data: GameData): Teammate {
+  const b = t.build;
+  if (!b) return t;
+  const main = b.echoes[0] && data.echoes.find((e) => e.id === b.echoes[0]!.echoId)?.name;
+  // a set counts once it has the pieces for its biggest bonus (different echoes only, like the game)
+  const names = new Map<number, Set<string>>();
+  for (const p of b.echoes) {
+    if (!p) continue;
+    const name = echoBaseName(data.echoes.find((e) => e.id === p.echoId)?.name ?? '');
+    names.set(p.setId, (names.get(p.setId) ?? new Set()).add(name));
+  }
+  const full = data.sonatas.filter((s) => (names.get(s.id)?.size ?? 0) >= Math.max(...s.effects.map((e) => e.pieces)));
+  const set = full.find((s) => TEAM_SETS[s.name]) ?? full[0];
+  return { ...t, sequence: b.sequence, weapon: b.weapon, mainEcho: main ? echoBaseName(main) : undefined, set: set?.name };
+}
+
+export function teammateEffects(given: Teammate, slot: number, data: GameData, onField?: string): Effect[] {
+  const t = teammateView(given, data);
   const c = data.characters.find((x) => x.id === t.characterId);
   if (!c) return [];
   const prefix = `t${slot + 1}.`;

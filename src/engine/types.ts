@@ -21,6 +21,10 @@ export interface Teammate {
   set?: string;
   /** anything else the teammate gives, typed by the user */
   custom: { key: ModKey; value: number; label: string }[];
+  /** use my own build of this Resonator (sequence, weapon, main echo, set come from it) */
+  linked?: boolean;
+  /** that build, attached when read (never stored, see buildStore.linkTeam) */
+  build?: Build;
 }
 
 export interface Build {

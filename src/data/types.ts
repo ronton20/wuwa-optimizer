@@ -29,6 +29,10 @@ export interface HitTerm {
   dmgType: DmgType;
   /** Raw game damage ids this term was matched to (empty = not matched, uses defaults). */
   damageIds: number[];
+  /** Concerto Energy each hit gives (from the matched damage entry) */
+  concerto?: number;
+  /** Resonance Energy each hit gives, before Energy Regen */
+  energy?: number;
 }
 
 export interface SkillRow {

@@ -6,6 +6,7 @@ import { PLAYABLE } from '../../engine';
 import { CharacterCard } from '../components/CharacterCard';
 import { ElementGlyph } from '../components/ElementGlyph';
 import { ImportCard } from '../import/ImportCard';
+import { TeamsSection } from './TeamsSection';
 import { useBuilds, useMyCharacters } from '../../state/buildStore';
 import { ELEMENT_COLOR, img } from '../theme';
 import { ui } from '../../strings/en';
@@ -44,6 +45,8 @@ export function CharacterSelect() {
           </div>
         </section>
       )}
+
+      {myChars.length > 0 && <TeamsSection />}
 
       <section>
         <Heading>{ui.allResonators}</Heading>

@@ -1,3 +1,5 @@
+import currentData from '../data/current';
+import { teammateView } from '../engine/effects';
 import { compressToEncodedURIComponent, decompressFromEncodedURIComponent } from 'lz-string';
 import type { GameData, SkillKind, StatKey } from '../data/types';
 import type { Build, EchoPiece, ModKey, Teammate } from '../engine/types';
@@ -31,7 +33,8 @@ export function encodeBuild(b: Build): string {
     [b.weapon.id, b.weapon.rank],
     b.echoes.map((p) => (p ? [p.echoId, p.setId, p.main.stat, p.subs.map((s) => [s.stat, s.value])] : 0)),
     Object.entries(b.conditions),
-    b.team === undefined ? 0 : b.team.map((t) => (t ? [t.characterId, t.sequence, t.weapon?.id ?? 0, t.weapon?.rank ?? 1, t.mainEcho ?? '', t.set ?? '', t.custom.map((c) => [c.key, c.value, c.label])] : 0)),
+    // a linked teammate is baked in (sequence, weapon, echo, set from my build): the receiver doesn't have my builds
+    b.team === undefined ? 0 : b.team.map((given) => given && teammateView(given, currentData)).map((t) => (t ? [t.characterId, t.sequence, t.weapon?.id ?? 0, t.weapon?.rank ?? 1, t.mainEcho ?? '', t.set ?? '', t.custom.map((c) => [c.key, c.value, c.label])] : 0)),
     b.enemy ? [b.enemy.level, ELEMENTS.map((e) => b.enemy!.res[e] ?? 0)] : 0,
     ...(b.nodesOff?.length ? [b.nodesOff] : []),
   ] as Packed;

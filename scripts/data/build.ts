@@ -129,6 +129,9 @@ function buildSkill(s: any, charElement: Element, unmatched: string[]): Skill {
             dmgType: m ? DMG_TYPES[m.Type] ?? 'Other' : guessType(kind, label),
             damageIds: matches.map((e: any) => e.Id),
           };
+          // Concerto and Resonance Energy per hit (the game stores them x100)
+          if (m?.ElementPower?.[0]) term.concerto = m.ElementPower[0] / 100;
+          if (m?.Energy?.[0]) term.energy = m.Energy[0] / 100;
           return term;
         });
       }

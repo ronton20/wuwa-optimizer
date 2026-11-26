@@ -4,6 +4,7 @@ import data from './data/current';
 import { StarField } from './ui/StarField';
 import { CharacterSelect } from './ui/screens/CharacterSelect';
 import { BuildScreen } from './ui/screens/BuildScreen';
+import { RotationScreen } from './ui/screens/RotationScreen';
 import { useBuilds } from './state/buildStore';
 import { t, ui } from './strings/en';
 import { decodeBuild } from './state/share';
@@ -14,6 +15,8 @@ function useHashRoute() {
   const activeId = useBuilds((s) => s.activeId);
   const select = useBuilds((s) => s.select);
   const openShared = useBuilds((s) => s.openShared);
+  const openTeam = useBuilds((s) => s.openTeam);
+  const showTeam = useBuilds((s) => s.showTeam);
   useEffect(() => {
     const read = () => {
       const share = location.hash.match(/^#\/s\/(.+)$/);
@@ -23,6 +26,9 @@ function useHashRoute() {
         else { alert(ui.badLink); select(null); }
         return;
       }
+      const team = location.hash.match(/^#\/t\/([\w-]+)/);
+      if (team) { showTeam(team[1]); return; }
+      showTeam(null);
       const m = location.hash.match(/^#\/c\/(\d+)/);
       const id = m ? Number(m[1]) : null;
       select(id && data.characters.some((c) => c.id === id) ? id : null);
@@ -30,12 +36,12 @@ function useHashRoute() {
     if (location.hash) read();
     window.addEventListener('hashchange', read);
     return () => window.removeEventListener('hashchange', read);
-  }, [select, openShared]);
+  }, [select, openShared, showTeam]);
   useEffect(() => {
-    const want = activeId ? `#/c/${activeId}` : '';
+    const want = activeId ? `#/c/${activeId}` : openTeam ? `#/t/${openTeam}` : '';
     if (location.hash !== want) history.pushState(null, '', want || location.pathname);
-  }, [activeId]);
-  return activeId;
+  }, [activeId, openTeam]);
+  return { activeId, openTeam };
 }
 
 /** Ctrl+Z / Ctrl+Y (and Ctrl+Shift+Z) for build edits. */
@@ -55,14 +61,15 @@ function useUndoKeys() {
 }
 
 export default function App() {
-  const activeId = useHashRoute();
+  const { activeId, openTeam } = useHashRoute();
+  const wide = activeId || openTeam;
   useUndoKeys();
 
   return (
     <>
       <StarField />
-      <div className={`mx-auto flex min-h-screen flex-col px-4 py-6 sm:px-6 ${activeId ? 'max-w-[1500px]' : 'max-w-6xl py-10'}`}>
-        {!activeId && (
+      <div className={`mx-auto flex min-h-screen flex-col px-4 py-6 sm:px-6 ${wide ? 'max-w-[1500px]' : 'max-w-6xl py-10'}`}>
+        {!wide && (
           <header className="mb-10 text-center">
             <motion.h1
               initial={{ opacity: 0, letterSpacing: '0.3em' }}
@@ -78,8 +85,8 @@ export default function App() {
 
         <main className="flex-1">
           <AnimatePresence mode="wait">
-            <motion.div key={activeId ?? 'select'} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
-              {activeId ? <BuildScreen characterId={activeId} /> : <CharacterSelect />}
+            <motion.div key={activeId ?? (openTeam ? `t-${openTeam}` : 'select')} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
+              {activeId ? <BuildScreen characterId={activeId} /> : openTeam ? <RotationScreen teamId={openTeam} /> : <CharacterSelect />}
             </motion.div>
           </AnimatePresence>
         </main>

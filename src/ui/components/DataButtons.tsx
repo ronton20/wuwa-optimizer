@@ -9,9 +9,9 @@ const APP = 'wuwa-optimizer';
 export function DataButtons() {
   const file = useRef<HTMLInputElement>(null);
   const exportAll = () => {
-    const { builds, saved } = useBuilds.getState();
+    const { builds, saved, teams, mainTeam, rotations } = useBuilds.getState();
     const { focus } = useSettings.getState();
-    const blob = new Blob([JSON.stringify({ app: APP, version: 1, exportedAt: new Date().toISOString(), builds, saved, settings: { focus } }, null, 2)], { type: 'application/json' });
+    const blob = new Blob([JSON.stringify({ app: APP, version: 1, exportedAt: new Date().toISOString(), builds, saved, teams, mainTeam, rotations, settings: { focus } }, null, 2)], { type: 'application/json' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
     a.download = `wuwa-optimizer-${new Date().toISOString().slice(0, 10)}.json`;
@@ -23,7 +23,7 @@ export function DataButtons() {
       const d = JSON.parse(await f.text());
       if (d?.app !== APP || typeof d.builds !== 'object') throw new Error('not ours');
       if (!confirm(ui.importConfirm)) return;
-      useBuilds.getState().importAll({ builds: d.builds, saved: Array.isArray(d.saved) ? d.saved : [] });
+      useBuilds.getState().importAll({ builds: d.builds, saved: Array.isArray(d.saved) ? d.saved : [], teams: Array.isArray(d.teams) ? d.teams : [], mainTeam: typeof d.mainTeam === 'string' ? d.mainTeam : null, rotations: Array.isArray(d.rotations) ? d.rotations : [] });
       if (d.settings?.focus === 'avg' || d.settings?.focus === 'crit') useSettings.getState().setFocus(d.settings.focus);
     } catch {
       alert(ui.importFailed);

@@ -90,6 +90,8 @@ export interface DamageOptions {
   only?: { skillKind: SkillKind; row: string };
   /** effects to treat as off whatever their toggle says (the optimizer: buffs nobody in the team can trigger) */
   disable?: (e: Effect) => boolean;
+  /** level override per effect (the rotation simulator: timed buffs are on only while they last); undefined = keep */
+  level?: (a: ActiveEffect) => number | undefined;
 }
 
 /** Damage of every hit of every skill for a build. */
@@ -97,7 +99,8 @@ export function computeDamage(build: Build, data: GameData, opts: DamageOptions 
   const c = data.characters.find((x) => x.id === build.characterId) as Character;
   const enemy = opts.enemy ?? build.enemy ?? DEFAULT_ENEMY;
   const effects = resolveEffects([...collectEffects(build, data), ...(opts.extra ?? [])], build.conditions)
-    .map((a) => (opts.disable?.(a.effect) ? { ...a, level: 0 } : a));
+    .map((a) => (opts.disable?.(a.effect) ? { ...a, level: 0 } : a))
+    .map((a) => { const l = opts.level?.(a); return l === undefined ? a : { ...a, level: l }; });
   const full = computeStats(build, data, effects);
 
   // stats with one group removed, for the breakdown (and with everything removed for the grey base)
