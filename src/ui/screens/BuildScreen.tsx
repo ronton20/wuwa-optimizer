@@ -17,9 +17,10 @@ import { BuffsTab } from '../tabs/BuffsTab';
 import { EchoesTab } from '../tabs/EchoesTab';
 import { TeamTab } from '../tabs/TeamTab';
 import { EnemyTab, enemyOf } from '../tabs/EnemyTab';
+import { OptimizeTab } from '../tabs/OptimizeTab';
 import { ui } from '../../strings/en';
 
-const TABS = ['overview', 'weapon', 'echoes', 'skills', 'sequences', 'team', 'buffs', 'enemy'] as const;
+const TABS = ['overview', 'weapon', 'echoes', 'skills', 'sequences', 'team', 'buffs', 'enemy', 'optimize'] as const;
 type Tab = (typeof TABS)[number];
 
 export function BuildScreen({ characterId }: { characterId: number }) {
@@ -121,6 +122,7 @@ export function BuildScreen({ characterId }: { characterId: number }) {
                 {tab === 'team' && <TeamTab characterId={characterId} />}
                 {tab === 'buffs' && <BuffsTab characterId={characterId} />}
                 {tab === 'enemy' && <EnemyTab characterId={characterId} />}
+                {tab === 'optimize' && <OptimizeTab characterId={characterId} />}
               </motion.div>
             </AnimatePresence>
           </div>

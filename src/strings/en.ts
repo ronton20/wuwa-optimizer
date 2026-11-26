@@ -39,7 +39,7 @@ export const SKILL_LABEL: Record<SkillKind, string> = {
 
 export const ui = {
   back: 'All Resonators',
-  tabs: { overview: 'Overview', weapon: 'Weapon', echoes: 'Echoes', skills: 'Skills', sequences: 'Sequences', team: 'Team', buffs: 'Buffs', enemy: 'Enemy' },
+  tabs: { overview: 'Overview', weapon: 'Weapon', echoes: 'Echoes', skills: 'Skills', sequences: 'Sequences', team: 'Team', buffs: 'Buffs', enemy: 'Enemy', optimize: 'Optimize' },
   damage: 'Damage',
   average: 'Average',
   avg: 'Avg',

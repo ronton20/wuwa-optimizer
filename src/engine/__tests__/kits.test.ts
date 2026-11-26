@@ -40,7 +40,7 @@ describe('new kits', () => {
     const row = 'Resonance Skill - Illumining Form DMG';
     expect(hit(flare, row).zones.dmgBonus - hit(uni, row).zones.dmgBonus).toBeCloseTo(50, 6); // 2 × 25% Electro
     expect(hit(uni, row).zones.scalingStat).toBeGreaterThan(hit(flare, row).zones.scalingStat); // +50% ATK
-    expect(hit(uni, row).zones.amplify).toBeCloseTo(9, 6); // 3 Unison Boon (2 + inherent) × 3%
+    expect(hit(uni, row).zones.amplify - hit(flare, row).zones.amplify).toBeCloseTo(9, 6); // 3 Unison Boon (2 + inherent) × 3%
   });
 
   it("Hsin's Unison Boon limit grows with her inherent and S6", () => {

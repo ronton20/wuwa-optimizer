@@ -86,13 +86,18 @@ export interface DamageOptions {
   extra?: Effect[];
   /** skip the per-source breakdown (much faster; segments are empty) */
   noBreakdown?: boolean;
+  /** only compute these rows (by skill kind + row label); used by the optimizer */
+  only?: { skillKind: SkillKind; row: string };
+  /** effects to treat as off whatever their toggle says (the optimizer: buffs nobody in the team can trigger) */
+  disable?: (e: Effect) => boolean;
 }
 
 /** Damage of every hit of every skill for a build. */
 export function computeDamage(build: Build, data: GameData, opts: DamageOptions = {}): { stats: Stats; hits: HitResult[] } {
   const c = data.characters.find((x) => x.id === build.characterId) as Character;
   const enemy = opts.enemy ?? build.enemy ?? DEFAULT_ENEMY;
-  const effects = resolveEffects([...collectEffects(build, data), ...(opts.extra ?? [])], build.conditions);
+  const effects = resolveEffects([...collectEffects(build, data), ...(opts.extra ?? [])], build.conditions)
+    .map((a) => (opts.disable?.(a.effect) ? { ...a, level: 0 } : a));
   const full = computeStats(build, data, effects);
 
   // stats with one group removed, for the breakdown (and with everything removed for the grey base)
@@ -101,8 +106,10 @@ export function computeDamage(build: Build, data: GameData, opts: DamageOptions 
 
   const hits: HitResult[] = [];
   for (const skill of c.skills) {
+    if (opts.only && skill.kind !== opts.only.skillKind) continue;
     const level = Math.min(build.skillLevels[skill.kind] ?? 10, 10);
     for (const row of skill.rows) {
+      if (opts.only && row.label !== opts.only.row) continue;
       row.hits?.forEach((term, termIndex) => {
         const h: HitContext = { skillKind: skill.kind, row: row.label, element: term.element, dmgType: term.dmgType };
         const value = hitValue(full, effects, term, level, h, enemy, new Set());
