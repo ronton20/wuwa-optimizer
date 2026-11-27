@@ -182,8 +182,8 @@ function Summary({ result, members, rot, onSave }: { result: SimResult; members:
         </div>
       </div>
       <div className="space-y-1.5 text-xs text-muted">
-        <label className="flex items-center gap-2" title={`Tower of Adversity stops the clock during Liberation animations: a Liberation counts ${FROZEN_LIBERATION_TIME}s instead of ${DEFAULT_TIMES.liberation}s`}>
-          <Toggle on={!!rot.freezeLiberation} onChange={(v) => onSave({ freezeLiberation: v })} label="Liberation time freeze" /> Liberation time freeze
+        <label className="flex items-center gap-2" title={ui.clockStopHint(FROZEN_LIBERATION_TIME, DEFAULT_TIMES.liberation)}>
+          <Toggle on={!!rot.freezeLiberation} onChange={(v) => onSave({ freezeLiberation: v })} label={ui.clockStop} /> {ui.clockStop}
         </label>
         <label className="flex items-center gap-2">
           <Toggle on={!!rot.fullConcerto} onChange={(v) => onSave({ fullConcerto: v })} label="Start with full Concerto" /> Start with full Concerto
@@ -193,7 +193,7 @@ function Summary({ result, members, rot, onSave }: { result: SimResult; members:
         </label>
       </div>
       <p className="text-xs text-muted lg:col-span-3">
-        Times are placeholders by kind of action until recorded timings land; select a move to set its own time. Outro buffs and buffs that say how long they last follow the rotation; other buffs follow their toggles in each Resonator's Buffs tab.
+        {ui.rotationNote}
       </p>
     </div>
   );
@@ -388,6 +388,10 @@ function StepDetail({ i, step, moves, freeze, swap, onPatch, onRemove, onShift, 
               onChange={(e) => onPatch({ seconds: e.target.value === '' ? undefined : Math.max(0, Number(e.target.value)) })}
               className="w-20 rounded-lg border border-white/15 bg-night-900 px-2 py-1 tabular" />
             <span className="text-xs text-muted">s {step.seconds === undefined && deflt ? ui.timeSource[deflt.source] : ''}</span>
+          </label>
+          <label className="flex items-center gap-2" title={ui.swapCancelHint}>
+            <Toggle on={!!step.cancel} onChange={(v) => onPatch({ cancel: v || undefined })} label={ui.swapCancel} />
+            <span className="text-muted">{ui.swapCancel}</span>
           </label>
           {press?.move.choice && (
             <div className="flex flex-wrap items-center gap-2">

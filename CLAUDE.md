@@ -74,7 +74,11 @@ a `t{n}.` prefix on their ids and keys. Linked teammates follow the owner's own 
   data, sequence)`). The UI shows the press; the math uses the real row. "Every move" lists every damage row
   with its type ("Resonance Liberation - …").
 - **Hand-made machines:** Hiyuki, Suisui, Lucilla (checked against the owner's in-game rotation; the test
-  "the in-game Suisui > Lucilla > Hiyuki rotation…" replays it). Everyone else uses `genericMachine`.
+  "the in-game Suisui > Lucilla > Hiyuki rotation…" replays it), Chisa, Ciaccona, Cartethyia (the owner's ToA floor 1
+  press list replays in "Chisa, Ciaccona and Cartethyia machines…"). Everyone else uses `genericMachine`.
+- **Gauges from the data:** `HitTerm.special` (damage.json SpecialEnergy1..5) is each hit's gain on the Resonator's
+  own gauge: `gaugeOf(c, kind, row, slot)` (Hiyuki's Frostheart = slot 1, Chisa's Ring of Chainsaw = slot 0).
+  Where a gauge isn't in the data, the machine's constant says so (`FROSTHEART_SKILL`, `CONVICTION_GAIN`).
 - **Machines track:** forms/stances, resources (`res`), ground/air (`air`), chains (`next`), per-step choices
   (`choice` + `RotationStep.option`, e.g. Snowforged Blades used), sequence changes.
 - **Simulator (`sim.ts`):** switching adds Outro + Intro only with full Concerto (or forced per step);
@@ -82,6 +86,8 @@ a `t{n}.` prefix on their ids and keys. Linked teammates follow the owner's own 
   weapon passives that restore Concerto; timed buffs (`timing.ts`): Outros, and toggles whose trigger is a plain
   action and whose own text (effect, sequence, weapon, sonata, echo) gives a duration. Everything else follows
   its Buffs-tab toggle and is listed as "Other buffs counted".
+- **Swap cancel** (`RotationStep.cancel`): switching mid-animation; the move lands, takes no time; its cast Concerto
+  ("Concerto Regen" rows) counts for the Outro, its hits' Concerto arrives after (Chisa's Eradication, checked).
 - **Action times:** step's own time → `RECORDED_TIMES` (move, then kind) → the machine's `seconds` estimate →
   `DEFAULT_TIMES` (`actionTime` in `timing.ts`); the step panel says which one it used.
 - **Negative Statuses (`status.ts`):** which rows inflict what is in `STATUS_ROWS`; each status's per-stack
@@ -89,8 +95,14 @@ a `t{n}.` prefix on their ids and keys. Linked teammates follow the owner's own 
   count for whoever applied the status. Glacio Chafe → Glacio Bite with Hiyuki in the team.
 - **Text hits:** "dealing X DMG equal to N% of ATK" hits with no Skill Detail row are added by the build
   (`fromText`, `seq`); the Skills tab marks them.
-- **Placeholders:** `DEFAULT_TIMES` (action times), `FROSTHEART_GAIN`, Lucilla's held Basic = 4s,
-  `NEGATIVE_STATUS_FACTOR` (1: the community formula's 1.25078 is already in the game's tables; unconfirmed).
+- **Measured (owner's ToA clips, 2026-11-27):** Hiyuki / Suisui move times in `recordedTimes.ts`, Lucilla's held
+  Basic 3.2s, the Liberation clock stop (0.15s), `NEGATIVE_STATUS_FACTOR` = 1 (a Glacio Bite number matched).
+- **Placeholders:** `DEFAULT_TIMES` for everything not recorded, `FROSTHEART_SKILL` (Frostheart per hit comes
+  from the data, `HitTerm.special`; her Skills' cast-time gain doesn't), Jump = 0.3s. `CONVICTION_GAIN` is read
+  off her Liberation ring in a recording (±3 per move). Concerto checked against the portrait glow: Suisui, Lucilla,
+  Hiyuki within one move; Chisa 10 short at her switch (with her Ring of Chainsaw gap, owner to check).
+  Chisa's chainsaw hits match the owner's on-screen numbers within ~1% (ToA floor 1: Lv 100 Crownless, Havoc RES
+  10% assuming base 0, Convergence + Havoc Bane −6% DEF on).
   Replace from recordings (skills `game-recording`, `model-character-timings`).
 
 ## Status and what's next

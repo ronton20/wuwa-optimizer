@@ -30,6 +30,16 @@ describe('Negative Status data and damage', () => {
     expect(statusDamage(b, data, 'Spectro Frazzle', 100, { amplify: 50 })).toBeCloseTo(plain * 1.5, 6);
   });
 
+  it('Amplify for all DMG (Suisui Outro) and for Glacio Chafe (Frostburn) reach Glacio Bite; ATK / DMG Bonus never do', () => {
+    const h = defaultBuild(id('Hiyuki'));
+    const alone = statusDamage(h, data, 'Glacio Bite', 100, {});
+    const withSuisui = statusDamage({ ...h, team: [{ characterId: id('Suisui'), sequence: 0, custom: [] }, null] }, data, 'Glacio Bite', 100, {});
+    const frostburn = data.weapons.find((w) => w.name === 'Frostburn')!.id;
+    const withFrostburn = statusDamage({ ...h, weapon: { id: frostburn, rank: 5 } }, data, 'Glacio Bite', 100, {});
+    // damage is linear in total Amplify: Suisui's Outro 25% + Reflecting Shadows 12% vs Frostburn R1 → R5 (20% → 40%)
+    expect((withSuisui - alone) / (withFrostburn - alone)).toBeCloseTo(37 / 20, 6);
+  });
+
   it('every status row names a real row of that Resonator', () => {
     for (const [name, rows] of Object.entries(STATUS_ROWS)) {
       const c = data.characters.find((x) => x.name === name)!;

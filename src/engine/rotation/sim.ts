@@ -18,6 +18,12 @@ export interface RotationStep {
    * Concerto, a plain switch otherwise. intro / quick force one or the other.
    */
   swap?: 'auto' | 'intro' | 'quick';
+  /**
+   * Swap-cancelled: the next step switches Resonators mid-animation. The move still lands (damage, Negative Statuses)
+   * but takes no time. Concerto it gives on cast ("Concerto Regen" rows) counts toward the Outro; its hits' Concerto
+   * arrives after it (checked: Chisa's Eradication, owner's ToA clip).
+   */
+  cancel?: boolean;
   /** pick for the move's choice (Spotlight / Compensate, Snowforged Blades used…) */
   option?: number;
 }
@@ -97,7 +103,9 @@ const nameOf = (row: string) => row.replace(/ DMG$/, '');
 
 /** Concerto, Resonance Energy (before Energy Regen) and Resonance Cost of a move, from the game data. */
 export function moveResources(c: Character, move: Move, extra: Skill[] = []) {
-  let concerto = 0, energy = 0;
+  // onHit: the part of `concerto` that comes from the hits landing (the rest comes on cast: "Concerto Regen" rows,
+  // text bonuses), which is what a swap cancel delays
+  let concerto = 0, energy = 0, onHit = 0;
   const skills = [...c.skills, ...extra];
   const rowsOfKind = (kind: SkillKind) => skills.filter((s) => s.kind === kind).flatMap((s) => s.rows);
   const find = (kind: SkillKind, label: string) => rowsOfKind(kind).find((r) => r.label === label);
@@ -109,10 +117,15 @@ export function moveResources(c: Character, move: Move, extra: Skill[] = []) {
     // a move's own "X Concerto Regen" row wins over the per-hit values
     const named = own(ref.skillKind, ref.row, 'Concerto Regen');
     const times = ref.times ?? 1;
-    concerto += times * (named ? num(named.values.at(-1)) : (row?.hits ?? []).reduce((s, h) => s + (h.concerto ?? 0) * h.count, 0));
+    const hits = named ? 0 : (row?.hits ?? []).reduce((s, h) => s + (h.concerto ?? 0) * h.count, 0);
+    concerto += times * (named ? num(named.values.at(-1)) : hits);
+    onHit += times * hits;
     energy += times * (row?.hits ?? []).reduce((s, h) => s + (h.energy ?? 0) * h.count, 0);
   }
   concerto += move.concerto ?? 0;
+  energy += move.energy ?? 0;
+  // a move with no damage of its own takes its skill's named rows ("A Knight's Heartfelt Prayers Concerto Regen")
+  if (move.named) concerto += num(find(move.kind, `${move.named} Concerto Regen`)?.values.at(-1));
   let cost = 0;
   if (move.cast) {
     concerto += num(find(move.kind, 'Concerto Regen')?.values.at(-1));
@@ -120,10 +133,11 @@ export function moveResources(c: Character, move: Move, extra: Skill[] = []) {
       // named costs ("Blade Liberation Resonance Cost") mean the other Liberation moves are free (Inward Vision)
       const hasNamed = rowsOfKind('Liberation').some((r) => / Resonance Cost$/.test(r.label));
       const mine = move.rows[0] && own('Liberation', move.rows[0].row, 'Resonance Cost');
-      cost = mine ? num(mine.values.at(-1)) : hasNamed ? 0 : num(find('Liberation', 'Resonance Cost')?.values.at(-1));
+      const named = move.named && find('Liberation', `${move.named} Resonance Cost`);
+      cost = named ? num(named.values.at(-1)) : mine ? num(mine.values.at(-1)) : hasNamed ? 0 : num(find('Liberation', 'Resonance Cost')?.values.at(-1));
     }
   }
-  return { concerto, energy, cost };
+  return { concerto, energy, cost, onHit };
 }
 
 /** The most Resonance Energy a Resonator holds: their (largest) Liberation cost. */
@@ -245,7 +259,9 @@ export function simulate(rotation: Pick<Rotation, 'steps' | 'freezeLiberation' |
   let onField: number | undefined;
   const byChar: Record<number, number> = {};
 
-  const perform = (step: number, char: number, pressed: Move, via: SimMove['via'], seconds: number, warn: string[] = []) => {
+  // Concerto of swap-cancelled moves, added after that Resonator's Outro
+  const late = new Map<number, number>();
+  const perform = (step: number, char: number, pressed: Move, via: SimMove['via'], seconds: number, warn: string[] = [], cancelled = false) => {
     const b = builds[char];
     // the Echo button hits with the build's main echo
     const echo = b && pressed.timing === 'echo' && !pressed.rows.length ? echoSkill(b, data) : undefined;
@@ -280,7 +296,9 @@ export function simulate(rotation: Pick<Rotation, 'steps' | 'freezeLiberation' |
         fromWeapon += w.amount;
       });
     }
-    concerto.set(char, move.kind === 'Outro' ? 0 : Math.min(100, conc(char) + res.concerto + fromWeapon));
+    // swap-cancelled: what the cast gives counts now (it decides the Outro); the hits' Concerto comes after the Outro
+    if (cancelled) { concerto.set(char, Math.min(100, conc(char) + res.concerto - res.onHit + fromWeapon)); late.set(char, (late.get(char) ?? 0) + res.onHit); }
+    else concerto.set(char, move.kind === 'Outro' ? 0 : Math.min(100, conc(char) + res.concerto + fromWeapon));
     const own = hits.reduce((s, h) => s + h.value, 0);
     byChar[char] = (byChar[char] ?? 0) + own;
     // Negative Statuses on the target: ticks due by now, and what this move inflicts (counted for whoever applied them)
@@ -309,6 +327,7 @@ export function simulate(rotation: Pick<Rotation, 'steps' | 'freezeLiberation' |
         states.set(out, o.state);
         events.push({ char: out, event: 'outro', t, incoming: s.char, tags: o.move.tags });
         perform(i, out, o.move, 'swap', 0, warn);
+        if (late.has(out)) { concerto.set(out, Math.min(100, late.get(out)!)); late.delete(out); }
         const intro = machine(s.char).press(state(s.char), 'intro');
         states.set(s.char, intro.state);
         perform(i, s.char, intro.move, 'swap', timeOf(s.char, intro.move));
@@ -317,7 +336,9 @@ export function simulate(rotation: Pick<Rotation, 'steps' | 'freezeLiberation' |
     onField = s.char;
     const { move, state: next } = machine(s.char).press(state(s.char), s.button, s.option);
     states.set(s.char, next);
-    perform(i, s.char, move, 'press', timeOf(s.char, move, s.seconds));
+    const following = rotation.steps[i + 1];
+    const cancelled = !!s.cancel && !!following && following.char !== s.char;
+    perform(i, s.char, move, 'press', cancelled ? 0 : timeOf(s.char, move, s.seconds), s.cancel && !cancelled ? ['Swap cancel only works right before switching Resonators'] : [], cancelled);
     snapshots.push(new Map(states));
   });
   // ticks that land before the rotation ends

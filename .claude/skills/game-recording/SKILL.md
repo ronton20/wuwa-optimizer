@@ -31,11 +31,11 @@ extract short full-rate windows around them.
 - **Action times:** follow the `model-character-timings` skill (they go in `src/engine/rotation/recordedTimes.ts`).
 - **Concerto / Frostheart / other gauges** after each move: compare with the simulator (run the same rotation,
   as in the "in-game … rotation" test) and fix `actions.ts` / the data build where they differ.
-  `FROSTHEART_GAIN` is a placeholder until measured.
+  `FROSTHEART_SKILL` (Jade Cleave / Petalfall) is the one Frostheart estimate left; per-hit gains are game data.
 - **Damage numbers:** compare with the simulator's per-move damage using the same builds and enemy. ToA floors
-  have buffs; get the floor's buff text (screenshot) and account for it. `NEGATIVE_STATUS_FACTOR`
-  (`src/engine/negative.ts`) is unconfirmed: one measured Negative Status hit (e.g. a Glacio Bite number with the
-  enemy's level and RES known) settles it.
+  have buffs; get the floor's buff text (screenshot) and account for it. Negative Status hits don't crit and repeat
+  the same number, so they're the easiest to match (Hiyuki's Snow Rust Glacio Bite confirmed
+  `NEGATIVE_STATUS_FACTOR` = 1). The owner's exported builds live in `tests-support/imports/` (gitignored).
 
 Report what was measured, the frame/time it came from, and what changed in the code. Delete extracted frames
 when done.

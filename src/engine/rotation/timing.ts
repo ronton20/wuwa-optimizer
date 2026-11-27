@@ -11,16 +11,21 @@ export const DEFAULT_TIMES: Record<TimingKind, number> = {
   basic: 0.6, heavy: 1.2, skill: 1.0, liberation: 2.0, echo: 0.8, intro: 1.2, outro: 0, forte: 1.0, dodge: 0.5, air: 0.9,
 };
 
-/** Tower of Adversity stops the clock during Resonance Liberation animations; this is what's left. */
-export const FROZEN_LIBERATION_TIME = 0.3;
+/**
+ * Tower of Adversity stops the clock during Resonance Liberation animations; this is what's left. Measured from the
+ * owner's ToA recordings (2026-11-27): 0.12 / 0.14 / 0.15 s read frame by frame, 0.12–0.27 s over 26 cinematics read
+ * automatically (those run high by up to a frame at each end).
+ */
+export const FROZEN_LIBERATION_TIME = 0.15;
 
 export type TimeSource = 'recorded' | 'estimate' | 'default' | 'frozen';
 
 /** How long a move takes when the step doesn't set its own time: recorded, then the machine's estimate, then the default. */
-export function actionTime(character: string, move: Pick<Move, 'label' | 'timing' | 'seconds'>, freezeLiberation = false): { seconds: number; source: TimeSource } {
-  if (move.timing === 'liberation' && freezeLiberation && move.seconds === undefined) return { seconds: FROZEN_LIBERATION_TIME, source: 'frozen' };
+export function actionTime(character: string, move: Pick<Move, 'label' | 'timing' | 'seconds' | 'stopsClock'>, freezeLiberation = false): { seconds: number; source: TimeSource } {
+  if ((move.timing === 'liberation' || move.stopsClock) && freezeLiberation && move.seconds === undefined) return { seconds: FROZEN_LIBERATION_TIME, source: 'frozen' };
   const r = RECORDED_TIMES[character];
-  const rec = r?.moves?.[move.label] ?? r?.kinds?.[move.timing];
+  // "Sawring - Eradication (40 Ring of Chainsaw spent)" also matches "Sawring - Eradication"
+  const rec = r?.moves?.[move.label] ?? r?.moves?.[move.label.replace(/ \([^)]*\)$/, '')] ?? r?.kinds?.[move.timing];
   if (rec !== undefined) return { seconds: rec, source: 'recorded' };
   if (move.seconds !== undefined) return { seconds: move.seconds, source: 'estimate' };
   return { seconds: DEFAULT_TIMES[move.timing], source: 'default' };

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import data from '../../data/current';
 import { defaultBuild } from '../../state/buildStore';
 import { uniformRes } from '../enemy';
-import { genericMachine, machineFor, moveName } from '../rotation/actions';
+import { FROSTHEART_SKILL, genericMachine, machineFor, moveName } from '../rotation/actions';
 import { moveResources, simulate, type RotationStep } from '../rotation/sim';
 import { DEFAULT_TIMES, FROZEN_LIBERATION_TIME } from '../rotation/timing';
 import { SNOW_RUST_BITE } from '../rotation/status';
@@ -100,7 +100,7 @@ describe('rotation machines', () => {
 
 describe('rotation simulation', () => {
   it('adds up damage and time, and DPS = damage / time', () => {
-    const r = simulate({ steps: press(H, 'basic', 'basic', 'basic') }, team(), data);
+    const r = simulate({ steps: press(L, 'basic', 'basic', 'basic') }, team(), data);
     expect(r.moves).toHaveLength(3);
     expect(r.total).toBeGreaterThan(0);
     expect(r.time).toBeCloseTo(3 * DEFAULT_TIMES.basic);
@@ -272,9 +272,9 @@ describe('rotation simulation', () => {
     const m = machineFor(char(H).id, data, 2);
     let s = m.press(m.initial(), 'liberation').state;
     s = m.press(s, 'skill').state;
-    expect(s.res!.frostheart).toBe(125);
+    expect(s.res!.frostheart).toBe(FROSTHEART_SKILL + 50);
     s = m.press(s, 'skill').state;
-    expect(s.res!.frostheart).toBe(250);
+    expect(s.res!.frostheart).toBe(Math.min(300, 2 * (FROSTHEART_SKILL + 50)));
   });
 
   it('sequence buffs time themselves from the sequence text (Hiyuki S4: 30s after her Skill)', () => {
@@ -387,5 +387,73 @@ describe('rotation simulation', () => {
     // +8 on Liberation, once every 20s
     const r = simulate({ steps: press(S, 'liberation', 'liberation') }, b, data);
     expect(r.moves[1].concerto - r.moves[0].concerto).toBeCloseTo(20);
+  });
+});
+
+describe('Chisa, Ciaccona and Cartethyia machines (the owner\'s ToA floor 1 press list)', () => {
+  const builds = () => Object.fromEntries(['Chisa', 'Ciaccona', 'Cartethyia'].map((n) => [char(n).id, defaultBuild(char(n).id)]));
+  const steps: RotationStep[] = [
+    ...press('Chisa', 'skill', 'basic', 'basic', 'basic', 'liberation', 'echo'), { char: char('Chisa').id, button: 'skill', option: 1 }, ...press('Chisa', 'basic', 'basic', 'basic'),
+    { char: char('Ciaccona').id, button: 'basic', swap: 'intro' }, ...press('Ciaccona', 'basic', 'jump', 'basic', 'basic', 'basic', 'skill', 'heavy', 'liberation'),
+    { char: char('Cartethyia').id, button: 'basic', swap: 'intro' },
+    ...press('Cartethyia', 'basic', 'basic', 'skill', 'basic', 'liberation', 'skill', 'echo', 'jump', 'basic', 'basic', 'skill', 'basic', 'basic', 'basic', 'heavy', 'basic', 'liberation'),
+  ];
+  const r = simulate({ steps, freezeLiberation: true }, builds(), data);
+  const labels = (name: string) => r.moves.filter((m) => m.char === char(name).id && m.via === 'press').map((m) => m.move.label);
+
+  it('a swap-cancelled move still lands and takes no time; its cast Concerto counts, its hits’ Concerto comes after the Outro', () => {
+    const ch = char('Chisa').id;
+    const base = [...steps.slice(0, 9), { ...steps[9], cancel: true }, ...steps.slice(10)];
+    const c = simulate({ steps: base, freezeLiberation: true }, builds(), data);
+    const era = c.moves.find((m) => /Eradication/.test(m.move.label))!;
+    expect(era.seconds).toBe(0);
+    expect(era.damage).toBeGreaterThan(0);
+    const outro = c.moves.find((m) => m.char === ch && m.move.kind === 'Outro')!;
+    // Eradication's 45 Concerto Regen counts on cast; only its hits' 4.8 come late
+    expect(outro.warn[0]).toMatch(/isn't full \(90\/100\)/);
+    const withoutCancel = simulate({ steps, freezeLiberation: true }, builds(), data);
+    expect(withoutCancel.time - c.time).toBeCloseTo(withoutCancel.moves.find((m) => /Eradication/.test(m.move.label))!.seconds, 6);
+  });
+
+  it('Chisa: Skill chains into Rending Lunge → Death Snip; Serrated Loop → Sawring - Blitz 2, 3 → Eradication', () => {
+    expect(labels('Chisa')).toEqual([
+      'Resonance Skill - Eye of Unraveling', 'Normal Attack - Rending Lunge', 'Normal Attack - Death Snip', 'Normal Attack - Death Snip Additional',
+      'Resonance Liberation - Moment of Nihility', expect.stringMatching(/^Echo Skill/), 'Resonance Skill - Serrated Loop',
+      'Sawring - Blitz Stage 2 + Discordance', 'Sawring - Blitz Stage 3 + Falltone', expect.stringMatching(/^Sawring - Eradication \(\d+ Ring of Chainsaw spent\)$/),
+    ]);
+    // Ring of Chainsaw from the game data per hit: 92 by the forced Serrated Loop (the game had 100)
+    expect(r.moves.find((m) => /Serrated Loop/.test(m.move.label))!.warn).toEqual(['Serrated Loop needs 100 Ring of Chainsaw (has 92)']);
+    // Eradication: Ring spent (Blitz 2, 3 with Discordance, Falltone) × 2.2 in Woven Myriad - Convergence (after her Liberation)
+    const era = r.moves.find((m) => /Eradication/.test(m.move.label))!;
+    expect(era.move.rows[0].bonus).toEqual({ row: 'Bonus DMG Multiplier per Ring of Chainsaw', times: 101 }); // 46 spent
+    expect(era.move.levels).toEqual({ 'c.chisa.conv': 1 });
+  });
+
+  it('Ciaccona: Intro → Stage 3, Stage 4, jump, Mid-air 1-2 → Stage 4; 3 Musical Essence → Quadruple Downbeat; Recital Tonic on the switch', () => {
+    expect(labels('Ciaccona')).toEqual([
+      'Normal Attack - Stage 3', 'Normal Attack - Stage 4', 'Jump', 'Mid-air Attack Stage 1', 'Mid-air Attack Stage 2',
+      'Normal Attack - Stage 4', 'Resonance Skill - Harmonic Allegro', 'Forte Circuit - Quadruple Downbeat', 'Resonance Liberation - Improvised Symphonic Poem Skill',
+    ]);
+    const lib = r.moves.find((m) => /Improvised Symphonic Poem/.test(m.move.label))!;
+    expect(lib.concerto).toBe(100);
+    expect(r.moves.find((m) => m.char === char('Ciaccona').id && m.move.kind === 'Outro')!.move.rows.map((x) => x.row)).toContain('Symphonic Poem: Tonic DMG');
+  });
+
+  it("Cartethyia: Sword Shadows recalled by her plunge, Fleurdelys' moves, Blade of Howling Squall at 120 Conviction", () => {
+    const l = labels('Cartethyia');
+    // Intro → Stage 2; Intro, Stage 4 and Skill summoned all 3 Sword Shadows (owner: "I did 2, 3, 4")
+    expect(l).toEqual([
+      'Basic Attack - Cartethyia Stage 2', 'Basic Attack - Cartethyia Stage 3', 'Basic Attack - Cartethyia Stage 4', 'Resonance Skill - Cartethyia',
+      'Mid-air Attack - Cartethyia (3 Sword Shadows recalled)',
+      "Resonance Liberation - A Knight's Heartfelt Prayers", "Resonance Skill - Sword to Answer Waves' Call", expect.stringMatching(/^Echo Skill/), 'Jump',
+      'Mid-air Attack - Fleurdelys Stage 1', 'Mid-air Attack - Fleurdelys Stage 2', 'Resonance Skill - May Tempest Break the Tides',
+      'Basic Attack - Fleurdelys Stage 3', 'Basic Attack - Fleurdelys Stage 4', 'Basic Attack - Fleurdelys Stage 5', 'Heavy Attack - Fleurdelys',
+      'Enhanced Heavy Attack - Fleurdelys', 'Resonance Liberation - Blade of Howling Squall',
+    ]);
+    // A Knight's Heartfelt Prayers has no damage row but costs its 125 Energy and gives its 20 Concerto
+    const prayers = r.moves.find((m) => /Heartfelt Prayers/.test(m.move.label))!;
+    expect(prayers.energy).toBe(0);
+    expect(prayers.concerto - r.moves[r.moves.indexOf(prayers) - 1].concerto).toBeCloseTo(20);
+    expect(r.moves.filter((m) => m.char === char('Cartethyia').id).flatMap((m) => m.warn)).toEqual([]);
   });
 });

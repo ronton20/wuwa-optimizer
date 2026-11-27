@@ -33,6 +33,12 @@ export interface HitTerm {
   concerto?: number;
   /** Resonance Energy each hit gives, before Energy Regen */
   energy?: number;
+  /**
+   * The Resonator's own gauges each hit changes (damage.json SpecialEnergy1..5; negative = spends). Which slot is
+   * which gauge is per kit: Hiyuki's Frostheart is [1]; Chisa's Ring of Chainsaw is [0] (spent by Sawring) and
+   * [2] counts what Sawring spent.
+   */
+  special?: number[];
 }
 
 export interface SkillRow {

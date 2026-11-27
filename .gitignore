@@ -30,5 +30,7 @@ public/img/
 tests-support/cards/
 # gameplay recordings and frames extracted from them (may show the UID)
 tests-support/recordings/
+# imports of the WuwaOptimizer characters from the live website
+tests-support/imports/
 # OCR files copied from node_modules at build time
 public/ocr/

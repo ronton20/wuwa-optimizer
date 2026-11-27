@@ -10,6 +10,9 @@ describe('action times', () => {
     expect(actionTime('Nobody', move)).toEqual({ seconds: DEFAULT_TIMES.basic, source: 'default' });
     expect(actionTime('Nobody', { ...move, seconds: 4 })).toEqual({ seconds: 4, source: 'estimate' });
     expect(actionTime('Nobody', { label: 'x', timing: 'liberation' }, true)).toEqual({ seconds: FROZEN_LIBERATION_TIME, source: 'frozen' });
+    // Hiyuki's Bitterfrost stops the ToA clock too; outside the Tower it takes its normal time
+    expect(actionTime('Nobody', { label: 'x', timing: 'heavy', stopsClock: true }, true).source).toBe('frozen');
+    expect(actionTime('Nobody', { label: 'x', timing: 'heavy', stopsClock: true }, false).source).toBe('default');
     RECORDED_TIMES.Nobody = { kinds: { basic: 0.7 }, moves: { 'Basic Attack - Test': 0.45 }, source: 'test' };
     try {
       expect(actionTime('Nobody', { ...move, seconds: 4 })).toEqual({ seconds: 0.45, source: 'recorded' });
@@ -21,9 +24,19 @@ describe('action times', () => {
     for (const [name, rec] of Object.entries(RECORDED_TIMES)) {
       const c = data.characters.find((x) => x.name === name);
       expect(c, name).toBeDefined();
-      const known = new Set(machineFor(c!.id, data).exact.map((b) => b.label));
+      const m = machineFor(c!.id, data, 6);
+      const strip = (l: string) => l.replace(/ \([^)]*\)$/, '');
+      const known = new Set(m.exact.map((b) => b.label));
+      // every move the machine makes within 7 presses from the start (Intro included)
+      let frontier = [m.initial()];
+      for (let d = 0; d < 7; d++) {
+        const next = [];
+        for (const s of frontier) for (const b of [...m.buttons.map((x) => x.id), 'intro']) { const r = m.press(s, b); known.add(strip(r.move.label)); next.push(r.state); }
+        const seen = new Set<string>();
+        frontier = next.filter((s) => { const k = JSON.stringify(s); return !seen.has(k) && seen.add(k); }).slice(0, 5000);
+      }
       for (const label of Object.keys(rec.moves ?? {}))
-        expect(label.split(' + ').every((p) => known.has(p) || p.startsWith('Echo Skill')), `${name} · ${label}`).toBe(true);
+        expect(known.has(strip(label)) || label.split(' + ').every((p) => known.has(strip(p)) || p.startsWith('Echo Skill')), `${name} · ${label}`).toBe(true);
     }
   });
 });

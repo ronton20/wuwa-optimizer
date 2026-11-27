@@ -39,12 +39,21 @@ export interface Move {
   warn?: string;
   /** Concerto the kit text gives on top of the data ("Spotlight restores 20 Concerto") */
   concerto?: number;
+  /** Resonance Energy the kit text gives on top of the data (before Energy Regen) */
+  energy?: number;
   /** a choice the step can change */
   choice?: Choice;
   /** numbers buffs can depend on (Suisui's Outro: Floral Epistle spent) */
   tags?: Record<string, number>;
   /** default time when it isn't one action of its kind (Lucilla's whole held Tracing Forms string) */
   seconds?: number;
+  /**
+   * Tower of Adversity stops the clock during it, like a Liberation (Hiyuki's Bitterfrost: the ToA timer stands still
+   * for its whole 2.2 s animation in the owner's recording). Liberations stop it without this.
+   */
+  stopsClock?: boolean;
+  /** the name its "<name> Concerto Regen" / "<name> Resonance Cost" rows use, when the move has no damage row */
+  named?: string;
   /** stack counts this move sets for its own hits, by effect id (Lucilla S6: Remembrance = Photos spent) */
   levels?: Record<string, number>;
   /** Glacio Chafe stacks the move inflicts on the target */
@@ -150,6 +159,12 @@ export function skillOfRow(c: Character, ref: RowRef) {
   return c.skills.find((s) => s.kind === ref.skillKind && s.rows.some((r) => r.label === ref.row));
 }
 
+/** A gauge a row's hits change in total (HitTerm.special[slot] × hits): Frostheart, Ring of Chainsaw… */
+export function gaugeOf(c: Character, kind: SkillKind, row: string, slot: number) {
+  const r = c.skills.filter((s) => s.kind === kind).flatMap((s) => s.rows).find((x) => x.label === row);
+  return (r?.hits ?? []).reduce((sum, h) => sum + (h.special?.[slot] ?? 0) * h.count, 0);
+}
+
 const rowsOf = (c: Character, kind: SkillKind) => c.skills.filter((s) => s.kind === kind).flatMap((s) => s.rows.filter((r) => r.hits?.length).map((r) => r.label));
 const ref = (skillKind: SkillKind, row: string): RowRef => ({ skillKind, row });
 
@@ -243,10 +258,12 @@ export function genericMachine(c: Character): Machine {
 }
 
 /**
- * Frostheart each Foreclaimed Self move restores. The game doesn't publish these; they're set so that the
- * in-game check (0 after Inward Vision → Basic ×5 + Jade Cleave + Petalfall → 300) holds. Change freely.
+ * Frostheart: Basic / Heavy / mid-air / Dodge hits restore what the game data gives per hit (HitTerm.special[1]:
+ * Basic 1–5 = 10, 16, 17, 30, 24). Jade Cleave and Petalfall restore it "while casting", which isn't in the damage
+ * data: set so the in-game check (0 after Inward Vision → Basic ×5 + Jade Cleave + Petalfall → 300) holds, (300 − 97) / 2.
  */
-export const FROSTHEART_GAIN = { basic: 30, heavy: 30, skill: 75, air: 30, dodge: 30 };
+export const FROSTHEART_SKILL = 102;
+const FROSTHEART = 1;
 
 /**
  * Hiyuki (checked against her in-game rotation).
@@ -298,23 +315,24 @@ function hiyukiMachine(c: Character, sequence = 0): Machine {
         if (form === 'present') return { move: m('Normal', 'Mid-air Attack - Present Self DMG', 'air', ['basic']), state: keep({}) };
         const n = s.family === 'fore-air' ? s.stage : 0;
         const row = n < 2 ? `Mid-air Attack - Foreclaimed Self Stage ${n + 1} DMG` : 'Mid-air Plunging Attack - Foreclaimed Self DMG';
-        return { move: m('Normal', row, 'air', ['basic']), state: n < 2 ? keep({ stage: n + 1, family: 'fore-air', air: true }, { frostheart: heart(FROSTHEART_GAIN.air) }) : keep({}, { frostheart: heart(FROSTHEART_GAIN.air) }) };
+        const fh = { frostheart: heart(gaugeOf(c, 'Normal', row, FROSTHEART)) };
+        return { move: m('Normal', row, 'air', ['basic']), state: n < 2 ? keep({ stage: n + 1, family: 'fore-air', air: true }, fh) : keep({}, fh) };
       }
       if (b === 'basic') {
         const list = form === 'fore' ? fore : present;
         const n = s.next !== undefined ? s.next : s.family === form ? s.stage % list.length : 0;
         // S1: after Inward Vision, Foreclaimed Basic 1 and 2 also inflict Glacio Chafe
         const s1 = form === 'fore' && n < 2 && (r.s1 ?? 0) > 0;
-        if (form === 'fore') return { move: m('Normal', list[n], 'basic', ['basic'], s1 ? { chafe: 1 } : {}), state: keep({ stage: n + 1 }, { frostheart: heart(FROSTHEART_GAIN.basic), ...(s1 ? { s1: r.s1 - 1 } : {}) }) };
+        if (form === 'fore') return { move: m('Normal', list[n], 'basic', ['basic'], s1 ? { chafe: 1 } : {}), state: keep({ stage: n + 1 }, { frostheart: heart(gaugeOf(c, 'Normal', list[n], FROSTHEART)), ...(s1 ? { s1: r.s1 - 1 } : {}) }) };
         const third = n === 2;
         return { move: m('Normal', list[n], 'basic', ['basic']), state: keep({ stage: n + 1 }, third ? { dedication: ded(r.enhanced ? 200 : 100), enhanced: 0 } : {}) };
       }
       if (b === 'heavy') {
         if (form === 'fore') {
           return r.bitterfrost >= 3
-            ? { move: m('Normal', 'Heavy Attack - Bitterfrost: Foreclaimed Self DMG', 'heavy', ['heavy']), state: keep({}, { bitterfrost: 0, blades: Math.min(3, r.blades + 1) }) }
+            ? { move: m('Normal', 'Heavy Attack - Bitterfrost: Foreclaimed Self DMG', 'heavy', ['heavy'], { stopsClock: true }), state: keep({}, { bitterfrost: 0, blades: Math.min(3, r.blades + 1) }) }
             // the thrust chains into Stage 2
-            : { move: m('Normal', 'Heavy Attack - Foreclaimed Self DMG', 'heavy', ['heavy']), state: keep({ next: 1 }, { frostheart: heart(FROSTHEART_GAIN.heavy) }) };
+            : { move: m('Normal', 'Heavy Attack - Foreclaimed Self DMG', 'heavy', ['heavy']), state: keep({ next: 1 }, { frostheart: heart(gaugeOf(c, 'Normal', 'Heavy Attack - Foreclaimed Self DMG', FROSTHEART)) }) };
         }
         const warn = r.dedication < 300 ? `Frost Splinter needs 300 Dedication (has ${r.dedication})` : undefined;
         return { move: m('Normal', 'Heavy Attack - Frost Splinter: Present Self DMG', 'heavy', ['heavy'], { warn }), state: keep({}, { dedication: 0, ready: 1 }) };
@@ -322,7 +340,7 @@ function hiyukiMachine(c: Character, sequence = 0): Machine {
       if (b === 'skill') {
         if (form === 'fore') {
           // Jade Cleave on the ground launches her; in the air the Skill is Petalfall
-          const gain = { frostheart: heart(FROSTHEART_GAIN.skill + (r.bonus > 0 ? 50 : 0)), bonus: Math.max(0, r.bonus - 1) };
+          const gain = { frostheart: heart(FROSTHEART_SKILL + (r.bonus > 0 ? 50 : 0)), bonus: Math.max(0, r.bonus - 1) };
           return s.air
             ? { move: m('Skill', 'Frostblight: Petalfall DMG', 'skill', ['skill']), state: keep({}, gain) }
             : { move: m('Skill', 'Frostblight: Jade Cleave DMG', 'skill', ['skill']), state: keep({ air: true }, gain) };
@@ -361,6 +379,13 @@ function hiyukiMachine(c: Character, sequence = 0): Machine {
  * Spring and enters Drizzle Stance (so does her Intro). Drizzle Stance: 4-stage Basic, 150 Floral Epistle each (max 600).
  * Her Outro spends all Floral Epistle (its buffs depend on how much) and leaves Drizzle Stance.
  */
+/**
+ * Inherent Sky Over Water: "When Awakening Spring and Intro Skill - Tinkling Jade hit a target, they additionally restore
+ * 18 points of Concerto Energy and 13 points of Resonance Energy … once every 25s".
+ * shortcut: the 25s cooldown isn't tracked (her rotation is longer than 25s); track it if a rotation casts both within 25s.
+ */
+const SKY_OVER_WATER = { concerto: 18, energy: 13 };
+
 function suisuiMachine(c: Character, sequence = 0): Machine {
   const g = genericMachine(c);
   const zephyr = rowsOf(c, 'Normal').filter((l) => /^Basic Attack - Zephyr Stance ?Stage \d/.test(l)).sort((a, b) => Number(a.match(/Stage (\d)/)![1]) - Number(b.match(/Stage (\d)/)![1]));
@@ -392,10 +417,10 @@ function suisuiMachine(c: Character, sequence = 0): Machine {
         // S3: the Drizzle Skill chains into Stage 4 and grants Kingfisher
         if (form === 'drizzle') return { move: mk(c, 'Skill', [ref('Skill', 'Resonance Skill - Drizzle Stance DMG')], 'skill', ['skill']), state: at(form, sequence >= 3 ? { next: 3 } : {}, { epistle: Math.min(600, r.epistle + 150), ...(sequence >= 3 ? { kingfisher: 1 } : {}) }) };
         return r.cloud >= 120
-          ? { move: mk(c, 'Skill', [ref('Skill', 'Awakening Spring DMG')], 'skill', ['skill']), state: at('drizzle', {}, { cloud: 0, epistle: 0 }) }
+          ? { move: mk(c, 'Skill', [ref('Skill', 'Awakening Spring DMG')], 'skill', ['skill'], SKY_OVER_WATER), state: at('drizzle', {}, { cloud: 0, epistle: 0 }) }
           : { move: mk(c, 'Skill', [ref('Skill', 'Resonance Skill - Zephyr Stance DMG')], 'skill', ['skill']), state: at(form, {}, { cloud: Math.min(120, r.cloud + 30) }) };
       }
-      if (b === 'intro') return { move: mk(c, 'Intro', [ref('Intro', 'Skill DMG')], 'intro', ['intro'], { cast: true }), state: at('drizzle', {}, { cloud: 0, epistle: 0 }) };
+      if (b === 'intro') return { move: mk(c, 'Intro', [ref('Intro', 'Skill DMG')], 'intro', ['intro'], { cast: true, ...SKY_OVER_WATER }), state: at('drizzle', {}, { cloud: 0, epistle: 0 }) };
       if (b === 'outro') {
         const o = g.press(s, 'outro').move;
         return { move: { ...o, tags: { 'Floral Epistle': r.epistle }, label: `${o.label} (${r.epistle} Floral Epistle)` }, state: at('zephyr', {}, { epistle: 0 }) };
@@ -432,7 +457,7 @@ function lucillaMachine(c: Character): Machine {
           const rows: RowRef[] = [1, 2, 3].map((n) => ref('Liberation', `Basic Attack - Tracing Forms Stage ${n} DMG`));
           if (p) rows.push({ ...ref('Forte', 'Oblivion DMG'), times: p });
           rows.push(ref('Liberation', 'Letting It Go DMG'));
-          return { move: { ...mk(c, 'Liberation', rows, 'basic', ['basic'], { concerto: 20, levels: { 'c.luc.s6': p, 'c.luc.s4': p }, tags: { chafeMode: p } }), label: `Basic Attack - Tracing Forms 1-2-3 + Oblivion ×${p} + Letting It Go`, timing: 'basic', seconds: 4 }, state: at('normal', {}, { trace: 0 }) };
+          return { move: { ...mk(c, 'Liberation', rows, 'basic', ['basic'], { concerto: 20, levels: { 'c.luc.s6': p, 'c.luc.s4': p }, tags: { chafeMode: p } }), label: `Basic Attack - Tracing Forms 1-2-3 + Oblivion ×${p} + Letting It Go`, timing: 'basic', seconds: 3.2 }, state: at('normal', {}, { trace: 0 }) }; // measured: 3.19 / 3.22 s (ToA, end of Clear As Day → switch)
         }
         const n = s.next !== undefined ? s.next : s.family === 'basic' ? s.stage % 3 : 0;
         if (n < 2) return { move: mk(c, 'Normal', [ref('Normal', `Basic Attack Stage ${n + 1} DMG`)], 'basic', ['basic']), state: { ...at('normal', { stage: n + 1 }), family: 'basic' } };
@@ -462,7 +487,259 @@ function lucillaMachine(c: Character): Machine {
   };
 }
 
-const MACHINES: Record<string, (c: Character, sequence?: number) => Machine> = { Hiyuki: hiyukiMachine, Suisui: suisuiMachine, Lucilla: lucillaMachine };
+/** Jumping: no damage of its own; it cancels the move before it and puts her in the air (estimate: 0.3 s). */
+const JUMP: Button = { id: 'jump', label: 'Jump', kind: 'Normal', hint: 'Jump (cancels the move before it); Basic in the air does mid-air attacks' };
+const jump = (s: MachineState) => ({ move: { label: 'Jump', kind: 'Normal' as SkillKind, rows: [], timing: 'dodge' as TimingKind, events: [], seconds: 0.3 }, state: { ...s, stage: 0, next: undefined, air: true } });
+
+/**
+ * Chisa. Basic string: Stage 1 → Stage 2 → Rending Lunge → Death Snip (a press during it: Death Snip Additional DMG)
+ * → Thread Withdrawn. Eye of Unraveling chains into Rending Lunge. Ring of Chainsaw (max 100): Normal Attacks and Eye
+ * of Unraveling restore it on hit (game data per hit), Liberation +40, Intro +20. At 100, on the ground, Skill is
+ * Serrated Loop: Chainsaw Mode, chained into Sawring - Blitz Stage 2. In Chainsaw Mode Basic is Sawring - Blitz 1 → 2 →
+ * 3 (they spend Ring of Chainsaw, game data per hit), then Sawring - Eradication: its multiplier gets 2.59% per Ring
+ * spent (×2.2 in Woven Myriad - Convergence, ×2.2 more at S3), and it ends Chainsaw Mode and Convergence.
+ * Liberation: Woven Myriad - Convergence (Sawring multipliers +120%) until Eradication.
+ */
+function chisaMachine(c: Character, sequence = 0): Machine {
+  const g = genericMachine(c);
+  const R = (s: MachineState) => ({ ring: 0, spent: 0, saw: 0, conv: 0, snip: 0, ...s.res });
+  const ground = ['Stage 1 DMG', 'Stage 2 DMG', 'Rending Lunge DMG', 'Death Snip DMG', 'Thread Withdrawn DMG'];
+  const blitz = ['Sawring - Blitz Stage 1 DMG', 'Sawring - Blitz Stage 2 DMG', 'Sawring - Blitz Stage 3 DMG'];
+  const RING = 0;
+  const hints: Record<string, string> = {
+    basic: 'Stage 1-2 → Rending Lunge → Death Snip (press again: Additional DMG) → Thread Withdrawn · Chainsaw Mode: Sawring - Blitz 1-3, then Eradication',
+    skill: 'Eye of Unraveling (chains into Rending Lunge) · Serrated Loop at 100 Ring of Chainsaw (Chainsaw Mode)',
+    liberation: 'Moment of Nihility: +40 Ring of Chainsaw, Woven Myriad - Convergence until Eradication',
+  };
+  return {
+    buttons: BASE_BUTTONS.map((b) => ({ ...b, hint: hints[b.id] ?? b.hint })),
+    exact: g.exact,
+    initial: () => ({ stage: 0, family: 'ground', form: 'normal', res: {} }),
+    swappedOut: (s) => ({ ...s, stage: 0, next: undefined, res: { ...R(s), snip: 0 } }),
+    gauges: (s) => [{ label: 'Ring of Chainsaw', value: Math.round(R(s).ring), max: 100 }],
+    press: (s, b, option) => {
+      const r = R(s);
+      const at = (patch: Partial<MachineState>, res: Partial<typeof r> = {}): MachineState => ({ stage: 0, family: 'ground', form: r.saw ? 'saw' : 'normal', ...patch, res: { ...r, ...res } });
+      const saw = (patch: Partial<MachineState>, res: Partial<typeof r> = {}): MachineState => ({ ...at({ family: 'saw', ...patch }, res), form: 'saw' });
+      const ring = (kind: SkillKind, row: string) => Math.max(0, Math.min(100, r.ring + gaugeOf(c, kind, row, RING)));
+      const conv = { 'c.chisa.conv': r.conv };
+      if (b === 'basic' && r.saw) {
+        const n = s.next !== undefined ? s.next : s.family === 'saw' ? s.stage : 0;
+        if (n < 3) {
+          // tapped (not held), Stage 2 and 3 end in Discordance / Falltone (seen: 304s after the 902s in the owner's clip)
+          const tail = n === 1 ? 'Sawring - Blitz Stage 2: Discordance DMG' : n === 2 ? 'Sawring - Blitz Stage 3: Falltone DMG' : undefined;
+          const rows = [blitz[n], ...(tail ? [tail] : [])];
+          const used = rows.reduce((a, x) => a - gaugeOf(c, 'Forte', x, RING), 0);
+          const label = `Sawring - Blitz Stage ${n + 1}${tail ? ` + ${n === 1 ? 'Discordance' : 'Falltone'}` : ''}`;
+          return {
+            move: { ...mk(c, 'Forte', rows.map((x) => ref('Forte', x)), 'basic', ['basic'], { levels: conv }), label },
+            state: saw({ stage: n + 1 }, { ring: Math.max(0, r.ring - used), spent: Math.min(100, r.spent + used) }),
+          };
+        }
+        // Eradication: +2.59% per Ring of Chainsaw spent, that bonus +120% in Convergence and +120% at S3
+        const times = Math.round(r.spent * (1 + 1.2 * r.conv + (sequence >= 3 ? 1.2 : 0)));
+        const row: RowRef = { skillKind: 'Forte', row: 'Sawring - Eradication DMG', ...(times ? { bonus: { row: 'Bonus DMG Multiplier per Ring of Chainsaw', times } } : {}) };
+        return {
+          move: { ...mk(c, 'Forte', [row], 'basic', ['basic'], { levels: conv }), label: `Sawring - Eradication (${Math.round(r.spent)} Ring of Chainsaw spent)` },
+          state: { ...at({}, { ring: 0, spent: 0, saw: 0, conv: 0 }), form: 'normal' },
+        };
+      }
+      if (b === 'basic' && s.air) return { move: mk(c, 'Normal', [ref('Normal', 'Hanging Finality DMG')], 'air', ['basic']), state: at({ next: 3, air: false }, { ring: ring('Normal', 'Hanging Finality DMG') }) };
+      if (b === 'basic') {
+        // a press during Death Snip is its Additional DMG
+        if (r.snip) return { move: mk(c, 'Normal', [ref('Normal', 'Death Snip Additional DMG')], 'basic', ['basic']), state: at({ next: 4 }, { ring: ring('Normal', 'Death Snip Additional DMG'), snip: 0 }) };
+        const n = s.next !== undefined ? s.next : s.family === 'ground' ? s.stage % ground.length : 0;
+        return { move: mk(c, 'Normal', [ref('Normal', ground[n])], 'basic', ['basic']), state: at({ stage: n + 1 }, { ring: ring('Normal', ground[n]), snip: n === 3 ? 1 : 0 }) };
+      }
+      if (b === 'heavy') {
+        if (r.saw) return { move: mk(c, 'Normal', [], 'heavy', [], { label: 'Heavy Attack', warn: 'No Heavy Attack in Chainsaw Mode' }), state: s };
+        return { move: mk(c, 'Normal', [ref('Normal', 'Heavy Attack DMG')], 'heavy', ['heavy']), state: at({ air: true }, { ring: ring('Normal', 'Heavy Attack DMG') }) };
+      }
+      if (b === 'skill') {
+        // Serrated Loop needs a full Ring of Chainsaw; the step can force it (with a warning) when the count runs short
+        const loop = !r.saw && !s.air && (option ?? (r.ring >= 100 ? 1 : 0)) === 1;
+        const choice: Choice | undefined = r.saw || s.air ? undefined : { label: 'Resonance Skill', options: ['Eye of Unraveling', 'Serrated Loop'], value: loop ? 1 : 0 };
+        if (loop) {
+          const warn = r.ring < 100 ? `Serrated Loop needs 100 Ring of Chainsaw (has ${Math.round(r.ring)})` : undefined;
+          return { move: mk(c, 'Skill', [ref('Skill', 'Serrated Loop DMG')], 'skill', ['skill'], { cast: true, choice, warn }), state: saw({ next: 1 }, { saw: 1, spent: 0, ring: 100 }) };
+        }
+        // not in Chainsaw Mode it chains into Rending Lunge; in Chainsaw Mode into Sawring - Blitz Stage 2
+        const eye = mk(c, 'Skill', [ref('Skill', 'Eye of Unraveling DMG')], 'skill', ['skill'], { cast: true, ...(choice ? { choice } : {}) });
+        return { move: eye, state: r.saw ? saw({ next: 1 }) : at({ next: 2, air: false }, { ring: ring('Skill', 'Eye of Unraveling DMG') }) };
+      }
+      if (b === 'liberation' || b === 'intro') {
+        const lib = b === 'liberation';
+        const move = mk(c, lib ? 'Liberation' : 'Intro', [ref(lib ? 'Liberation' : 'Intro', 'Skill DMG')], b, [b], { cast: true });
+        const res = { ring: Math.min(100, r.ring + (lib ? 40 : 20)), ...(lib ? { conv: 1 } : {}) };
+        return { move, state: r.saw ? saw(lib ? { stage: s.stage } : { next: 1 }, res) : at({ next: 1 }, res) };
+      }
+      const out = g.press(s, b);
+      return { move: out.move, state: b === 'echo' || b === 'outro' ? s : out.state };
+    },
+  };
+}
+
+/**
+ * Ciaccona. Basic 1-4 (Stage 4: +1 Musical Essence, +1 more at S3; at S6 her Solo Concert's 220% hit). Intro +1
+ * Musical Essence and chains into Stage 3; Skill chains into Stage 2. In the air: Mid-air Attack 1, 2, then Basic is
+ * Stage 4. Heavy at 3 Musical Essence is Quadruple Downbeat (spends them all); otherwise it jumps into a mid-air Heavy.
+ * Liberation starts Recital: switching her out while in it fires a Symphonic Poem: Tonic (Green by default).
+ */
+function ciacconaMachine(c: Character, sequence = 0): Machine {
+  const g = genericMachine(c);
+  const R = (s: MachineState) => ({ essence: 0, recital: 0, ...s.res });
+  const stages = [1, 2, 3, 4].map((n) => `Stage ${n} DMG`);
+  const hints: Record<string, string> = {
+    basic: 'Stage 1-4 (Stage 4: +1 Musical Essence) · in the air: Mid-air 1, 2, then Stage 4',
+    heavy: 'Quadruple Downbeat at 3 Musical Essence · otherwise a jumping Heavy Attack',
+    liberation: "Singer's Triple Cadenza: Recital (switching out fires a Tonic)",
+  };
+  return {
+    buttons: [...BASE_BUTTONS.map((b) => ({ ...b, hint: hints[b.id] ?? b.hint })), JUMP],
+    exact: g.exact,
+    initial: () => ({ stage: 0, family: 'basic', form: 'normal', res: {} }),
+    swappedOut: (s) => ({ ...s, stage: 0, next: undefined, air: false }),
+    gauges: (s) => [{ label: 'Musical Essence', value: R(s).essence, max: 3 }],
+    press: (s, b) => {
+      const r = R(s);
+      const at = (patch: Partial<MachineState>, res: Partial<typeof r> = {}): MachineState => ({ stage: 0, family: 'basic', form: 'normal', air: false, ...patch, res: { ...r, ...res } });
+      if (b === 'jump') return jump(s);
+      if (b === 'basic' && s.air) {
+        const n = s.family === 'air' ? s.stage : 0;
+        // after Mid-air 2, Basic is Stage 4
+        if (n < 2) return { move: mk(c, 'Normal', [ref('Normal', `Mid-air Attack Stage ${n + 1} DMG`)], 'air', ['basic']), state: n === 1 ? at({ next: 3 }) : at({ stage: 1, family: 'air', air: true }) };
+      }
+      if (b === 'basic') {
+        const n = s.next !== undefined ? s.next : s.family === 'basic' ? s.stage % 4 : 0;
+        const rows = [ref('Normal', stages[n]), ...(n === 3 && sequence >= 6 ? [ref('Liberation', 'S6 · Unending Cadence DMG')] : [])];
+        return { move: mk(c, 'Normal', rows, 'basic', ['basic']), state: at({ stage: n + 1 }, n === 3 ? { essence: Math.min(3, r.essence + (sequence >= 3 ? 2 : 1)) } : {}) };
+      }
+      if (b === 'heavy') {
+        if (r.essence >= 3) return { move: mk(c, 'Forte', [ref('Forte', 'Quadruple Downbeat DMG')], 'heavy', ['heavy'], { cast: true }), state: at({}, { essence: 0 }) };
+        return { move: mk(c, 'Normal', [ref('Normal', 'Heavy Attack DMG')], 'heavy', ['heavy']), state: at({ family: 'air', air: true }) };
+      }
+      if (b === 'skill') return { move: mk(c, 'Skill', [ref('Skill', 'Skill DMG')], 'skill', ['skill'], { cast: true }), state: at({ next: 1 }) };
+      if (b === 'liberation') return { move: mk(c, 'Liberation', [ref('Liberation', 'Improvised Symphonic Poem Skill DMG')], 'liberation', ['liberation'], { cast: true }), state: at({}, { recital: 1 }) };
+      // coming back on the field ends Recital
+      if (b === 'intro') return { move: mk(c, 'Intro', [ref('Intro', 'Skill DMG')], 'intro', ['intro'], { cast: true }), state: at({ next: 2 }, { essence: Math.min(3, r.essence + 1), recital: 0 }) };
+      if (b === 'outro' && r.recital) {
+        const o = g.press(s, 'outro').move;
+        return { move: { ...o, rows: [...o.rows, ref('Liberation', 'Symphonic Poem: Tonic DMG')], label: `${o.label} + Symphonic Poem: Tonic` }, state: s };
+      }
+      const out = g.press(s, b);
+      return { move: out.move, state: b === 'echo' || b === 'outro' ? s : out.state };
+    },
+  };
+}
+
+/**
+ * Conviction each Fleurdelys move restores (not in the damage data). Read off the ring around her Liberation button
+ * in the owner's ToA floor 1 clip (cartethyia/toa_1, 10 fps, 2026-11-27): 0 → 120 over Answer Waves' Call (its field
+ * keeps ticking: ~27), mid-air 1-2 (~10 each), May Tempest (~14), Basic 3, 4, 5 (~10, 8, 10), Heavy (~10), Enhanced
+ * Heavy (~21, full at 120). Steps were matched to the press list by time, so single values are ±3; the total is exact.
+ * Moves not in that clip use 10 (estimate).
+ */
+export const CONVICTION_GAIN: Record<string, number> = {
+  "Sword to Answer Waves' Call DMG": 27, 'Mid-air Attack 1 DMG': 10, 'Mid-air Attack 2 DMG': 10, 'May Tempest Break the Tides DMG': 14,
+  'Basic Attack Stage 3 DMG': 10, 'Basic Attack Stage 4 DMG': 8, 'Basic Attack Stage 5 DMG': 10, 'Heavy Attack DMG': 10, 'Enhanced Heavy Attack DMG': 21,
+};
+const conviction = (row: string) => CONVICTION_GAIN[row] ?? 10;
+
+/**
+ * Cartethyia. Basic 1-4 (Stage 4 summons Sword of Divinity's Shadow), Heavy and Intro summon Sword of Discord's Shadow,
+ * Skill summons Sword of Virtue's Shadow and leaves her in the air. Her plunge (Basic in the air) recalls them all
+ * (the "N Sword Shadows Recalled" row) for Heart of Virtue / Mandate of Divinity / Power of Discord, then Basic is
+ * Stage 2. Liberation - A Knight's Heartfelt Prayers: Fleurdelys (Manifest, Conviction 0).
+ * Fleurdelys: Basic 1-5, mid-air 1-2, Skill Sword to Answer Waves' Call then May Tempest Break the Tides (chains into
+ * Stage 3), Heavy then Basic = Enhanced Heavy. Liberation at 120 Conviction is Blade of Howling Squall (ends Manifest);
+ * below it, Avatar swaps to the other form (Cartethyia's Stage 2 / Fleurdelys' Stage 2) without ending Manifest.
+ */
+function cartethyiaMachine(c: Character): Machine {
+  const g = genericMachine(c);
+  const R = (s: MachineState) => ({ divinity: 0, discord: 0, virtue: 0, heart: 0, mandate: 0, power: 0, manifest: 0, conviction: 0, tempest: 0, enhanced: 0, ...s.res });
+  const hints: Record<string, string> = {
+    basic: 'Cartethyia: Stage 1-4 (4 summons a Sword Shadow) · in the air: plunge, recalling the Sword Shadows · Fleurdelys: Stage 1-5, mid-air 1-2, after Heavy: Enhanced Heavy',
+    heavy: 'Cartethyia: summons a Sword Shadow · Fleurdelys: Heavy (then Basic: Enhanced Heavy)',
+    skill: "Cartethyia: summons a Sword Shadow, leaves her in the air · Fleurdelys: Sword to Answer Waves' Call, then May Tempest Break the Tides",
+    liberation: 'Fleurdelys (Manifest) · Blade of Howling Squall at 120 Conviction · otherwise swaps form (Avatar)',
+  };
+  return {
+    buttons: [...BASE_BUTTONS.map((b) => ({ ...b, hint: hints[b.id] ?? b.hint })), JUMP],
+    exact: g.exact,
+    initial: () => ({ stage: 0, family: 'carte', form: 'carte', res: {} }),
+    swappedOut: (s) => ({ ...s, stage: 0, next: undefined, air: false, res: { ...R(s), tempest: 0, enhanced: 0 } }),
+    gauges: (s) => {
+      const r = R(s);
+      return s.form === 'fleur' ? [{ label: 'Conviction', value: r.conviction, max: 120 }] : [{ label: 'Sword Shadows', value: r.divinity + r.discord + r.virtue, max: 3 }];
+    },
+    press: (s, b) => {
+      const form = s.form ?? 'carte';
+      const r = R(s);
+      const at = (f: string, patch: Partial<MachineState>, res: Partial<typeof r> = {}): MachineState => ({ stage: 0, family: f, form: f, air: false, ...patch, res: { ...r, ...res } });
+      const conv = (n: number) => ({ conviction: Math.min(120, r.conviction + n) });
+      if (b === 'jump') return jump(s);
+      if (form === 'fleur') {
+        // named as the game does: "Basic Attack - Fleurdelys Stage 3", "Resonance Skill - May Tempest Break the Tides"
+        const fleurName = (row: string) => row.replace(/ DMG$/, '').replace(/^Basic Attack Stage (\d)$/, 'Basic Attack - Fleurdelys Stage $1')
+          .replace(/^Mid-air Attack (\d)$/, 'Mid-air Attack - Fleurdelys Stage $1').replace(/^(Enhanced )?Heavy Attack$/, '$1Heavy Attack - Fleurdelys')
+          .replace(/^(Sword to Answer Waves' Call|May Tempest Break the Tides)$/, 'Resonance Skill - $1');
+        const F = (row: string, timing: TimingKind, event: GameEvent, gain: number, patch: Partial<MachineState> = {}, res: Partial<typeof r> = {}) =>
+          ({ move: { ...mk(c, 'Forte', [ref('Forte', row)], timing, [event]), label: fleurName(row) }, state: at('fleur', patch, { ...conv(gain), ...res }) });
+        if (b === 'basic' && s.air) {
+          const n = s.family === 'fleur-air' ? s.stage % 2 : 0;
+          return F(`Mid-air Attack ${n + 1} DMG`, 'air', 'basic', conviction(`Mid-air Attack ${n + 1} DMG`), { stage: n + 1, family: 'fleur-air', air: true });
+        }
+        if (b === 'basic' && r.enhanced) return F('Enhanced Heavy Attack DMG', 'heavy', 'heavy', conviction('Enhanced Heavy Attack DMG'), {}, { enhanced: 0 });
+        if (b === 'basic') {
+          const n = s.next !== undefined ? s.next : s.family === 'fleur' ? s.stage % 5 : 0;
+          return F(`Basic Attack Stage ${n + 1} DMG`, 'basic', 'basic', conviction(`Basic Attack Stage ${n + 1} DMG`), { stage: n + 1 });
+        }
+        if (b === 'heavy') return F('Heavy Attack DMG', 'heavy', 'heavy', conviction('Heavy Attack DMG'), {}, { enhanced: 1 });
+        if (b === 'skill') {
+          return r.tempest
+            ? F('May Tempest Break the Tides DMG', 'skill', 'skill', conviction('May Tempest Break the Tides DMG'), { next: 2 }, { tempest: 0 })
+            : F("Sword to Answer Waves' Call DMG", 'skill', 'skill', conviction("Sword to Answer Waves' Call DMG"), { air: !!s.air }, { tempest: 1 });
+        }
+        if (b === 'liberation') {
+          if (r.conviction >= 120) {
+            return { move: mk(c, 'Liberation', [ref('Liberation', 'Blade of Howling Squall DMG')], 'liberation', ['liberation'], { cast: true }), state: at('carte', {}, { conviction: 0, manifest: 0, heart: 0, mandate: 0, power: 0 }) };
+          }
+          return { move: { ...mk(c, 'Normal', [ref('Normal', 'Stage 2 DMG')], 'basic', ['basic']), label: 'Avatar - Cartethyia (Basic Attack - Cartethyia Stage 2)' }, state: at('carte', { stage: 2 }) };
+        }
+        if (b === 'intro') return { move: mk(c, 'Intro', [ref('Intro', 'Sword to Call for Freedom DMG')], 'intro', ['intro'], { cast: true }), state: at('fleur', { next: 1 }, conv(conviction('Sword to Call for Freedom DMG'))) };
+        const out = g.press(s, b);
+        return { move: out.move, state: b === 'echo' || b === 'outro' ? s : at('fleur', {}) };
+      }
+      // Cartethyia
+      if (b === 'basic' && s.air) {
+        const n = r.divinity + r.discord + r.virtue;
+        const row = n === 0 ? 'Mid-air Attack' : `Mid-air Attack ${n} Sword Shadow${n > 1 ? 's' : ''} Recalled`;
+        const res = { divinity: 0, discord: 0, virtue: 0, heart: r.heart || r.virtue, mandate: r.mandate || r.divinity, power: r.power || r.discord };
+        return { move: { ...mk(c, 'Normal', [ref('Normal', row)], 'air', ['basic']), label: `Mid-air Attack - Cartethyia (${n} Sword Shadow${n === 1 ? '' : 's'} recalled)` }, state: at('carte', { next: 1 }, res) };
+      }
+      if (b === 'basic') {
+        const n = s.next !== undefined ? s.next : s.family === 'carte' ? s.stage % 4 : 0;
+        return { move: { ...mk(c, 'Normal', [ref('Normal', `Stage ${n + 1} DMG`)], 'basic', ['basic']), label: `Basic Attack - Cartethyia Stage ${n + 1}` }, state: at('carte', { stage: n + 1 }, n === 3 ? { divinity: 1 } : {}) };
+      }
+      if (b === 'heavy') return { move: { ...mk(c, 'Normal', [ref('Normal', 'Heavy Attack DMG')], 'heavy', ['heavy']), label: 'Heavy Attack - Cartethyia' }, state: at('carte', { air: !!s.air }, { discord: 1 }) };
+      if (b === 'skill') return { move: { ...mk(c, 'Skill', [ref('Skill', 'Skill DMG')], 'skill', ['skill'], { cast: true }), label: 'Resonance Skill - Cartethyia' }, state: at('carte', { air: true }, { virtue: 1 }) };
+      if (b === 'liberation') {
+        if (r.manifest) return { move: { ...mk(c, 'Forte', [ref('Forte', 'Basic Attack Stage 2 DMG')], 'basic', ['basic']), label: 'Avatar - Fleurdelys (Basic Attack - Fleurdelys Stage 2)' }, state: at('fleur', { stage: 2 }) };
+        return {
+          move: { ...mk(c, 'Liberation', [], 'liberation', ['liberation'], { cast: true, named: "A Knight's Heartfelt Prayers" }), label: "Resonance Liberation - A Knight's Heartfelt Prayers" },
+          state: at('fleur', {}, { manifest: 1, conviction: 0 }),
+        };
+      }
+      if (b === 'intro') return { move: mk(c, 'Intro', [ref('Intro', "Sword to Mark Tide's Trace DMG")], 'intro', ['intro'], { cast: true }), state: at('carte', { next: 1 }, { discord: 1 }) };
+      const out = g.press(s, b);
+      return { move: out.move, state: b === 'echo' || b === 'outro' ? s : at('carte', {}) };
+    },
+  };
+}
+
+const MACHINES: Record<string, (c: Character, sequence?: number) => Machine> = {
+  Hiyuki: hiyukiMachine, Suisui: suisuiMachine, Lucilla: lucillaMachine, Chisa: chisaMachine, Ciaccona: ciacconaMachine, Cartethyia: cartethyiaMachine,
+};
 
 /** Characters with a hand-made machine (the rest use the generic one). */
 export const HAS_MACHINE = Object.keys(MACHINES);

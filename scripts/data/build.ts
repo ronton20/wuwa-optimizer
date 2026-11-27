@@ -133,6 +133,9 @@ function buildSkill(s: any, charElement: Element, unmatched: string[]): Skill {
           // Concerto and Resonance Energy per hit (the game stores them x100)
           if (m?.ElementPower?.[0]) term.concerto = m.ElementPower[0] / 100;
           if (m?.Energy?.[0]) term.energy = m.Energy[0] / 100;
+          // the Resonator's own gauges per hit (Frostheart, Ring of Chainsaw…), stored as plain points
+          const special = [1, 2, 3, 4, 5].map((k) => m?.[`SpecialEnergy${k}`]?.[0] ?? 0);
+          if (special.some(Boolean)) term.special = special;
           return term;
         });
       }

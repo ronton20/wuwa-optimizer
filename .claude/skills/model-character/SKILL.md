@@ -73,7 +73,13 @@ Rules:
 Copy the shape of a close existing kit (supports: Shorekeeper, Lily; Negative Status: Cartethyia, Chisa; stance
 characters: Hiyuki, Galbrena).
 
-## 4. Concerto and Energy
+## 4. Concerto, Energy and the kit's own gauges
+
+Each hit's gain on the Resonator's own gauge (Frostheart, Ring of Chainsaw, …) is in the data: `HitTerm.special`
+(damage.json SpecialEnergy1..5; the dump prints them per term). Find which slot is which gauge by matching the kit
+text, then read it with `gaugeOf(c, kind, row, slot)`. Only gains the text gives per cast ("restores 200 Dedication",
+"+40 Ring of Chainsaw") or that the data lacks (Cartethyia's Conviction) are typed in, as a named constant saying so.
+
 
 The sim takes Concerto/Energy per hit from the data, "X Concerto Regen" rows and "Resonance Cost". After the
 machine is in, run a full rotation (step 6) and check the Resonator reaches 100 Concerto and enough Energy
@@ -122,10 +128,14 @@ If the kit needed something the engine can't do, add it to Gaps below (and fix i
 ## Gaps the engine has (update as they're fixed)
 
 - Negative Status damage is simulated in rotations only (`rotation/status.ts`, numbers from the game's buff data,
-  `engine/negative.ts`). Not yet: Havoc Bane's DEF −2%/stack on hits, stack-limit raises other than Suisui's
+  `engine/negative.ts`). Havoc Bane's DEF −2%/stack is a Chisa kit stack effect (`c.chisa.bane`; other appliers should share its key). Not yet: stack-limit raises other than Suisui's
   Landscape, moves that fill stacks to the limit or trigger a status hit directly (Hsin, Cartethyia S2), the
   base factor is unconfirmed (`NEGATIVE_STATUS_FACTOR`).
 - Tune Rupture / Tune Strain / Tune Break damage and Tune Break Boost: not modelled.
 - Fixed-number hits ("61,803 Havoc DMG") and multiplier formulas in text ("42% × stacks × …"): no row type yet.
 - Healing and shields: not computed.
 - Echo-type conversion ("counts as Echo Skill DMG"): not modelled per move.
+- Timed states inside a machine (Cartethyia's 12s Manifest, Chisa's Chainsaw Fever) aren't timed; the machine assumes
+  the player stays inside them.
+- Moves without a damage row of their own: give the move `named: "<skill name>"` so its "<name> Concerto Regen" /
+  "<name> Resonance Cost" rows apply (A Knight's Heartfelt Prayers). Air moves: the shared `JUMP` button.

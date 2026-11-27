@@ -10,7 +10,9 @@ import type { ActiveEffect, Build } from './types';
  *
  * The community formula is "level × 1.25078 × stack multiplier"; its stack multipliers times 1.25078 are exactly
  * the game's tables (Spectro Frazzle: 0.240 → 30%, 1.995 → 249.51%), so with the game's numbers the factor is 1.
- * Unconfirmed against an in-game damage number: change here if one disagrees.
+ * Checked in game (owner's ToA floor 1, 2026-11-27, their builds): Hiyuki's 590% Snow Rust Glacio Bite read 34,118;
+ * factor 1 gives 34,092 (35,456 with Lucilla's −8% Glacio RES on, so it had run out or the boss has some Glacio
+ * RES); factor 1.25078 gives 42,000+.
  */
 export const NEGATIVE_STATUS_FACTOR = 1;
 
@@ -25,13 +27,19 @@ export function statusDamage(build: Build, data: GameData, status: NegativeStatu
   let amplify = opts.amplify ?? 0, resShred = 0, defIgnore = 0;
   for (const a of resolveEffects(collectEffects(build, data), build.conditions)) {
     const lv = opts.level?.(a) ?? a.level;
-    // only buffs aimed at Negative Status damage; general DMG buffs don't reach it
-    if (lv <= 0 || !a.effect.appliesTo?.statuses || !inMode(a.effect, build.conditions) || !matches(a.effect.appliesTo, h)) continue;
+    if (lv <= 0 || !inMode(a.effect, build.conditions)) continue;
+    const f = a.effect.appliesTo;
+    // Amplify that reaches it: aimed at this status (Glacio Bite counts as Glacio Chafe), or at all damage ("all DMG
+    // Amplified"; checked: Hiyuki's 590% Snow Rust Bite needs Suisui's Outro Amplify to match the game). RES cuts on
+    // its element are a debuff on the target, so they count too. Stat buffs (ATK, DMG Bonus, Crit) never do.
+    const aimed = !!f?.statuses && matches(f, h);
+    const everything = !f;
+    const elementOnly = !!f && !f.statuses && !f.rows && !f.skillKinds && !f.dmgTypes && f.element === def.element;
     for (const m of a.effect.mods) {
       const v = modValue(m, a.effect, lv);
-      if (m.key === 'amplify') amplify += v;
-      else if (m.key === 'resShred') resShred += v;
-      else if (m.key === 'defIgnore') defIgnore += v;
+      if (m.key === 'amplify' && (aimed || everything)) amplify += v;
+      else if (m.key === 'resShred' && (aimed || everything || elementOnly)) resShred += v;
+      else if (m.key === 'defIgnore' && aimed) defIgnore += v;
     }
   }
   const base = data.negativeStatus.levelBase[CHARACTER_LEVEL] * NEGATIVE_STATUS_FACTOR;

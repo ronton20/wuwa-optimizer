@@ -25,8 +25,29 @@ what to record (below). Done.
 
 ## 2. Extract frames
 
-Use the `game-recording` skill for ffmpeg (overview at 2 fps, then 30 fps windows around each move). Frame N at
-F fps = start + (N-1)/F s.
+**Ask for the inputs first.** Naming moves from the animation alone is unreliable (Basics especially). Each clip
+needs the owner's press list (e.g. `basic ×4, skill, basic ×4, liberation, echo, [switch] …`) in its notes. Without
+it, only switches, Skill/Liberation/Echo casts (cooldowns starting) and cinematics can be timed.
+
+Tools in `scripts/` (run from `tests-support/recordings/`, output under `frames/`, gitignored):
+- `extract.sh <video> <dir>`: 10 fps crops of the ToA timer, the party column and the E/Q/R buttons.
+- `node analyze.mjs <dir>`: OCRs the timer and cooldowns, reads which party slot lacks its number badge (= on the
+  field) → `<dir>/timeline.json`. ~3 min per minute of video.
+- `node gaps.mjs <dir>`: cinematics (timer hidden ≥ 1 s) and the game time that passed across each one.
+- `bar.sh <video> <start> <dur> <out.png>`: a 10 fps sheet of skill bar + timer (one cast = a cooldown appears).
+Contact sheets of the action: ffmpeg `fps=4,scale=640:-2,drawtext=…,tile=3x4` (on Windows `drawtext` needs
+`fontfile='C\:/Windows/Fonts/arial.ttf'`).
+
+Gauges (not times, but read from the same clips):
+- **Concerto = 100** when both off-field portraits (top right) get a white ring: crop the party column at 10 fps,
+  `node glow.mjs <dir> > glow.txt`, then `node onsets.mjs glow.txt <timeline dir>` (needs ≥ 1 s of glow; shorter
+  spikes are hit flashes). A Resonator who switches out right as they reach 100 shows no glow: their last move
+  is where they hit it.
+- **A ring gauge around a skill button** (Cartethyia's Conviction on Liberation): crop the button, fit the ring
+  centre on a full frame, `node ring.mjs <dir> <cx> <cy> <r> <start> <fps>` prints the fill × 120.
+
+**Use the ToA timer as the clock** (mm:ss:cc, top centre): it's game time, it shows edits (jumps), and it stops
+during Liberation cinematics. Video time is only for finding frames.
 
 ## 3. Measure
 
@@ -70,6 +91,21 @@ of the owner's rotation is close to the recording's (say how close).
 One clip per Resonator in a training room, 60 fps, no other Resonator switching in, each of: Basic string ×2,
 Heavy, every enhanced Heavy/Basic, Skill (each variant), Liberation, Echo, Intro (switch in), plus their real
 rotation once. A `notes.md` with sequence, weapon and what each clip shows.
+
+## Measured so far (2026-11-27, owner's ToA clips of the Hiyuki and Cartethyia teams)
+
+- ToA Liberation clock stop: 0.12–0.15 s left per cinematic (`FROZEN_LIBERATION_TIME` = 0.15).
+- Switching in Hiyuki (Outro + Intro) hides the UI for 1.48–1.70 s (recorded as her Intro, 1.6 s).
+- With the owner's press lists (`<clip>_rotation.txt`): Lucilla's held Basic 3.19 / 3.22 s; Hiyuki Intro → Inward
+  Vision (Basic 3 + Frost Splinter) 4.2–4.5 s; Hiyuki Foreclaimed Basic ×5 4.2–4.3 s; Suisui Zephyr ×4 2.4–2.9 s,
+  Awakening Spring 0.99 s, Drizzle ×4 + Echo 6.0 s. All in `recordedTimes.ts`.
+- A cast shows on the skill bar as a ring around the button, then a cooldown number. Inputs that don't touch the bar
+  (Basic, Heavy) can only be timed as a group between two casts; split a group by eye only with a note saying so.
+- Cartethyia team timed from cartethyia/toa_1 (stretches between casts exact; splits inside them by default
+  proportions, or by Conviction-ring steps for Fleurdelys). Replay vs clip: finisher at 30.76 s vs 30.84 s.
+- A switch that doesn't hide the UI (no Outro/Intro cinematic) is read off the skill bar changing icons.
+- Moves whose labels carry details ("Sawring - Eradication (40 Ring…)") can be recorded without the "(…)" part.
+- `still.mjs <dir>` lists spans where the timer is visible but stopped (a clock stop without a cinematic).
 
 ## Grow this skill
 
