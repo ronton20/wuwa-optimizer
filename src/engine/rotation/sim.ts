@@ -1,9 +1,10 @@
-import type { Character, GameData, SkillKind } from '../../data/types';
-import { computeDamage, matches, type HitContext } from '../damage';
+import type { Character, GameData, Skill, SkillKind } from '../../data/types';
+import { computeDamage, ECHO_ROW, echoSkill, matches, type HitContext } from '../damage';
 import { collectEffects, inMode, resolveEffects } from '../effects';
 import type { ActiveEffect, Build, Effect } from '../types';
 import { machineFor, skillOfRow, type GameEvent, type Machine, type MachineState, type Move, type RowRef } from './actions';
-import { characterOf, DEFAULT_TIMES, FROZEN_LIBERATION_TIME, timedRule, type TimedRule } from './timing';
+import { BITE_ROW, chafeTracker, type ChafeInfo } from './chafe';
+import { characterOf, DEFAULT_TIMES, FROZEN_LIBERATION_TIME, timedRule, weaponConcerto, type TimedRule } from './timing';
 
 /** One press in the rotation. Switching to another Resonator happens before their first press. */
 export interface RotationStep {
@@ -56,6 +57,8 @@ export interface SimMove {
   energy: number;
   maxEnergy: number;
   warn: string[];
+  /** Glacio Chafe this move inflicted, and Hiyuki's Glacio Bite */
+  chafe?: ChafeInfo;
 }
 
 export interface BuffLane {
@@ -91,15 +94,16 @@ const num = (v: string | undefined) => (v ? Number.parseFloat(v) || 0 : 0);
 const nameOf = (row: string) => row.replace(/ DMG$/, '');
 
 /** Concerto, Resonance Energy (before Energy Regen) and Resonance Cost of a move, from the game data. */
-export function moveResources(c: Character, move: Move) {
+export function moveResources(c: Character, move: Move, extra: Skill[] = []) {
   let concerto = 0, energy = 0;
-  const rowsOfKind = (kind: SkillKind) => c.skills.filter((s) => s.kind === kind).flatMap((s) => s.rows);
+  const skills = [...c.skills, ...extra];
+  const rowsOfKind = (kind: SkillKind) => skills.filter((s) => s.kind === kind).flatMap((s) => s.rows);
   const find = (kind: SkillKind, label: string) => rowsOfKind(kind).find((r) => r.label === label);
   /** "Foreclaiming: Blade Liberation Resonance Cost" belongs to "Foreclaiming: Blade Liberation Base DMG" */
   const own = (kind: SkillKind, row: string, what: string) =>
     rowsOfKind(kind).find((r) => r.label.endsWith(` ${what}`) && nameOf(row).startsWith(r.label.slice(0, -what.length - 1)));
   for (const ref of move.rows) {
-    const row = skillOfRow(c, ref)?.rows.find((r) => r.label === ref.row);
+    const row = rowsOfKind(ref.skillKind).find((r) => r.label === ref.row);
     // a move's own "X Concerto Regen" row wins over the per-hit values
     const named = own(ref.skillKind, ref.row, 'Concerto Regen');
     const times = ref.times ?? 1;
@@ -166,7 +170,7 @@ export function simulate(rotation: Pick<Rotation, 'steps' | 'freezeLiberation' |
       const r = rulesFor(b);
       // stacks the move sets itself (only for effects that are on), then timed buffs
       const level = (a: ActiveEffect) => (levels && a.effect.id in levels && a.level > 0 ? levels[a.effect.id] : r.has(a.effect.id) ? (up.has(a.effect.id) ? a.level : 0) : undefined);
-      const { hits } = computeDamage(b, data, { noBreakdown: true, only: { skillKind: ref.skillKind, row: ref.row }, level });
+      const { hits } = computeDamage(b, data, { noBreakdown: true, only: { skillKind: ref.skillKind, row: ref.row }, level, echo: ref.skillKind === 'Echo' });
       let value = hits.reduce((s, h) => s + h.avg * h.count, 0);
       if (ref.bonus && hits.length) {
         // extra multiplier on the same hit: scale by (row % + bonus % × times) / row %
@@ -186,7 +190,9 @@ export function simulate(rotation: Pick<Rotation, 'steps' | 'freezeLiberation' |
     const key = `${b.characterId}|${move.rows.map((r) => `${r.skillKind}:${r.row}`).join(';')}|${[...up].sort().join(',')}`;
     if (!usedCache.has(key)) {
       const c = characterOf(data, b.characterId)!;
-      const ctx: HitContext[] = move.rows.flatMap((ref) => (skillOfRow(c, ref)?.rows.find((r) => r.label === ref.row)?.hits ?? [])
+      const echo = echoSkill(b, data);
+      const rowOf = (ref: RowRef) => (ref.skillKind === 'Echo' ? echo?.rows[0] : skillOfRow(c, ref)?.rows.find((r) => r.label === ref.row));
+      const ctx: HitContext[] = move.rows.flatMap((ref) => (rowOf(ref)?.hits ?? [])
         .map((h) => ({ skillKind: ref.skillKind, row: ref.row, element: h.element, dmgType: h.dmgType })));
       const r = rulesFor(b);
       const names = resolveEffects(collectEffects(b, data), b.conditions)
@@ -210,6 +216,9 @@ export function simulate(rotation: Pick<Rotation, 'steps' | 'freezeLiberation' |
   const conc = (id: number) => concerto.get(id) ?? (rotation.fullConcerto ? 100 : 0);
   const ener = (id: number) => energy.get(id) ?? (rotation.emptyEnergy ? 0 : maxE(id));
 
+  const chafe = chafeTracker(Object.keys(builds).map(Number), builds, data);
+  const hiyukiId = data.characters.find((c) => c.name === 'Hiyuki')?.id;
+  const weaponCd = new Map<string, number>();
   const moves: SimMove[] = [];
   const snapshots: Map<number, MachineState>[] = [];
   const swaps: Record<number, 'intro' | 'quick'> = {};
@@ -217,8 +226,11 @@ export function simulate(rotation: Pick<Rotation, 'steps' | 'freezeLiberation' |
   let onField: number | undefined;
   const byChar: Record<number, number> = {};
 
-  const perform = (step: number, char: number, move: Move, via: SimMove['via'], seconds: number, warn: string[] = []) => {
+  const perform = (step: number, char: number, pressed: Move, via: SimMove['via'], seconds: number, warn: string[] = []) => {
     const b = builds[char];
+    // the Echo button hits with the build's main echo
+    const echo = b && pressed.timing === 'echo' && !pressed.rows.length ? echoSkill(b, data) : undefined;
+    const move: Move = echo ? { ...pressed, rows: [{ skillKind: 'Echo', row: ECHO_ROW }], label: `Echo Skill - ${echo.name}` } : pressed;
     const c = characterOf(data, char)!;
     const hits: SimHit[] = [];
     const buffs: string[] = [];
@@ -231,7 +243,7 @@ export function simulate(rotation: Pick<Rotation, 'steps' | 'freezeLiberation' |
       if (move.rows.length) always = used(b, move, up);
     } else warn.push(`${c.name} has no build yet`);
     if (move.warn) warn.push(move.warn);
-    const res = moveResources(c, move);
+    const res = moveResources(c, move, echo ? [echo] : []);
     let e = ener(char);
     if (res.cost) {
       if (e + 1e-6 < res.cost) warn.push(`Not enough Resonance Energy (${Math.floor(e)} / ${res.cost})`);
@@ -239,10 +251,27 @@ export function simulate(rotation: Pick<Rotation, 'steps' | 'freezeLiberation' |
     }
     e = Math.min(maxE(char) || Infinity, e + res.energy * (b ? er(b) : 1));
     energy.set(char, e);
-    concerto.set(char, move.kind === 'Outro' ? 0 : Math.min(100, conc(char) + res.concerto));
-    const damage = hits.reduce((s, h) => s + h.value, 0);
-    byChar[char] = (byChar[char] ?? 0) + damage;
-    moves.push({ step, char, move, via, t, seconds, damage, hits, buffs: [...new Set(buffs)], always, concerto: conc(char), energy: e, maxEnergy: maxE(char), warn });
+    // weapon passives that restore Concerto on an action (Variation: Resonance Skill +16 at R5)
+    let fromWeapon = 0;
+    if (b && move.kind !== 'Outro') {
+      weaponConcerto(b.weapon, data).forEach((w, k) => {
+        const key = `${char}|${k}`;
+        if (!move.events.includes(w.on) || t - (weaponCd.get(key) ?? -Infinity) < w.cooldown) return;
+        weaponCd.set(key, t);
+        fromWeapon += w.amount;
+      });
+    }
+    concerto.set(char, move.kind === 'Outro' ? 0 : Math.min(100, conc(char) + res.concerto + fromWeapon));
+    const own = hits.reduce((s, h) => s + h.value, 0);
+    byChar[char] = (byChar[char] ?? 0) + own;
+    // Glacio Chafe on the target; Hiyuki's extra Glacio Bite counts as her damage
+    const ch = chafe({ t, char, onField: char, move, events });
+    if (ch?.bite) {
+      hits.push({ row: { skillKind: 'Forte', row: BITE_ROW }, value: ch.bite });
+      if (hiyukiId !== undefined) byChar[hiyukiId] = (byChar[hiyukiId] ?? 0) + ch.bite;
+    }
+    const damage = own + (ch?.bite ?? 0);
+    moves.push({ step, char, move, via, t, seconds, damage, hits, buffs: [...new Set(buffs)], always, concerto: conc(char), energy: e, maxEnergy: maxE(char), warn, ...(ch ? { chafe: ch.info } : {}) });
     for (const ev of move.events) if (ev !== 'outro') events.push({ char, event: ev, t, tags: move.tags });
     t += seconds;
   };

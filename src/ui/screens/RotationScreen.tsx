@@ -5,6 +5,7 @@ import type { SkillKind } from '../../data/types';
 import { machineFor, skillOfRow, type MachineState, type Move } from '../../engine/rotation/actions';
 import { maxEnergyOf, simulate, type Rotation, type RotationStep, type SimMove, type SimResult } from '../../engine/rotation/sim';
 import { DEFAULT_TIMES, FROZEN_LIBERATION_TIME } from '../../engine/rotation/timing';
+import { BITE_ROW } from '../../engine/rotation/chafe';
 import type { Build } from '../../engine/types';
 import { teamBuild, useBuilds } from '../../state/buildStore';
 import { ui } from '../../strings/en';
@@ -156,6 +157,7 @@ export function RotationScreen({ teamId }: { teamId: string }) {
 function Summary({ result, members, rot, onSave }: { result: SimResult; members: number[]; rot: Rotation; onSave: (p: Partial<Rotation>) => void }) {
   const color = useContext(ColorCtx);
   const warnings = result.moves.filter((m) => m.warn.length).length;
+  const bite = result.moves.flatMap((m) => m.hits).filter((h) => h.row.row === BITE_ROW).reduce((a, h) => a + h.value, 0);
   return (
     <div className="glass grid gap-4 rounded-2xl p-5 lg:grid-cols-[auto_1fr_auto] lg:items-center">
       <div className="flex gap-8">
@@ -166,6 +168,7 @@ function Summary({ result, members, rot, onSave }: { result: SimResult; members:
         <div className="space-y-1 text-sm">
           <div><span className="text-muted">Damage </span><span className="tabular">{fmt(result.total)}</span></div>
           <div><span className="text-muted">Time </span><span className="tabular">{secs(result.time)}</span></div>
+          {bite > 0 && <div className="text-xs text-muted" title="Hiyuki's Snow Rust Glacio Bite hits, from the community-measured Negative Status formula">incl. Glacio Bite ~<span className="tabular">{fmt(bite)}</span> (estimate)</div>}
           {warnings > 0 && <div className="text-xs text-fusion">{warnings} move{warnings > 1 ? 's' : ''} with a warning</div>}
         </div>
       </div>
@@ -355,6 +358,14 @@ function StepDetail({ i, step, moves, freeze, swap, onPatch, onRemove, onShift, 
                 </div>
               ))}
               {m.move.rows.length === 0 && m.move.kind !== 'Outro' && <div className="pl-3 text-xs text-muted">No damage of its own.</div>}
+              {m.chafe && (
+                <div className="pl-3 text-xs text-muted">
+                  Glacio Chafe +{m.chafe.inflicted} → <span className="tabular text-ink">{m.chafe.stacks}/{m.chafe.limit}</span>
+                  {m.chafe.frostbind && <span className="text-[#9be7ff]"> · Frostbind (−10)</span>}
+                  {m.chafe.snowRust > 0 && <> · Snow Rust {m.chafe.snowRust}</>}
+                  {m.chafe.bites > 0 && <> · Glacio Bite ×{m.chafe.bites} (estimate)</>}
+                </div>
+              )}
               <div className="pl-3 text-xs text-muted">Concerto after: <span className="tabular text-ink">{Math.floor(m.concerto)}</span>{m.maxEnergy > 0 && <> · Energy after: <span className="tabular text-ink">{Math.floor(m.energy)}/{m.maxEnergy}</span></>}</div>
             </div>
           ))}
@@ -444,6 +455,21 @@ function Timeline({ result, members, hover, onHover, onSelect }: { result: SimRe
             </div>
           );
         })}
+        {result.moves.some((m) => m.chafe) && (() => {
+          const ch = result.moves.filter((m) => m.chafe);
+          return (
+            <div className="mt-1.5 flex items-center">
+              <span className="w-56 shrink-0 truncate pr-2 text-xs text-muted" title="Glacio Chafe stacks on the target (Frostbind marked)">Glacio Chafe on target</span>
+              <div className="relative h-4 flex-1 rounded bg-white/5">
+                {ch.map((m, k) => {
+                  const end = ch[k + 1]?.t ?? T;
+                  return <span key={k} className="absolute bottom-0" title={`${m.chafe!.stacks}/${m.chafe!.limit}${m.chafe!.frostbind ? ' · Frostbind' : ''}`}
+                    style={{ left: pct(m.t), width: pct(Math.max(0, end - m.t)), height: `${(m.chafe!.stacks / 13) * 100}%`, background: m.chafe!.frostbind ? '#9be7ff' : 'color-mix(in oklab, #9be7ff 45%, transparent)' }} />;
+                })}
+              </div>
+            </div>
+          );
+        })()}
         {result.lanes.length === 0 && <p className="mt-3 text-xs text-muted">No timed buffs went up in this rotation.</p>}
         {result.lanes.map((l) => (
           <div key={l.key} className="mt-1.5 flex items-center">

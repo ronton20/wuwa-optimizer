@@ -43,7 +43,8 @@ export interface SkillRow {
   hits?: HitTerm[];
 }
 
-export type SkillKind = 'Normal' | 'Skill' | 'Liberation' | 'Inherent' | 'Intro' | 'Forte' | 'Outro' | 'TuneBreak';
+/** 'Echo': the main echo's skill, added to a build's moves (not a Resonator skill) */
+export type SkillKind = 'Normal' | 'Skill' | 'Liberation' | 'Inherent' | 'Intro' | 'Forte' | 'Outro' | 'TuneBreak' | 'Echo';
 
 export interface Skill {
   id: number;
@@ -95,7 +96,7 @@ export interface Echo {
   name: string;
   cost: 1 | 3 | 4;
   sets: number[];
-  skill: { description: string; cooldown?: number };
+  skill: { description: string; cooldown?: number; /** its damage, at max rank */ hits?: HitTerm[] };
   icon: string;
   /** 732x392 artwork */
   iconBig: string;

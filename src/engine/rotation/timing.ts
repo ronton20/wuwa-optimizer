@@ -90,3 +90,21 @@ export function timedRule(e: Effect, owner: Character | undefined, data?: GameDa
 }
 
 export function characterOf(data: GameData, id: number) { return data.characters.find((c) => c.id === id); }
+
+/**
+ * Concerto a weapon's passive restores on an action ("When Resonance Skill is cast, restores 16 Concerto Energy",
+ * "Casting Resonance Liberation restores 8 points of Concerto Energy, triggered once every 20s").
+ */
+export function weaponConcerto(weapon: { id: number; rank: number } | undefined, data: GameData): { on: GameEvent; amount: number; cooldown: number }[] {
+  const w = weapon && data.weapons.find((x) => x.id === weapon.id);
+  const text = plain(w?.passive?.descriptions?.[weapon!.rank - 1] ?? '');
+  const out: { on: GameEvent; amount: number; cooldown: number }[] = [];
+  for (const sentence of text.split(/(?<=\.)\s/)) {
+    const amount = sentence.match(/restores? (\d+) (?:points of )?Concerto Energy/i)?.[1];
+    if (!amount) continue;
+    const on: GameEvent | undefined = /Resonance Liberation/i.test(sentence) ? 'liberation' : /Resonance Skill/i.test(sentence) ? 'skill' : /Intro Skill/i.test(sentence) ? 'intro' : undefined;
+    if (!on) continue;
+    out.push({ on, amount: Number(amount), cooldown: Number(sentence.match(/once every (\d+(?:\.\d+)?)s/)?.[1] ?? 0) });
+  }
+  return out;
+}

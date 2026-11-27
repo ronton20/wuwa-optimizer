@@ -1,0 +1,42 @@
+---
+name: game-recording
+description: Get action timings, resource gains and damage numbers from a gameplay video or screenshots (ffmpeg frames → read them), and compare them with the rotation simulator. Use when the owner gives a recording or in-game screenshots.
+---
+
+# Read a gameplay recording
+
+Claude can't play a video; extract frames with ffmpeg and read them as images.
+
+## Setup
+
+- ffmpeg on PATH (`winget install ffmpeg`).
+- Keep recordings and frames out of git: put them in `tests-support/recordings/` (add the folder to
+  `.gitignore` if it isn't there). They may show the UID too.
+
+## Extract
+
+```bash
+# overview: 2 frames/s with the time in the name
+ffmpeg -i tests-support/recordings/run.mp4 -vf "fps=2,scale=960:-1" tests-support/recordings/frames/%05d.png
+# a short window at full rate for timing (start 12.0s, 3s long, 30 fps)
+ffmpeg -ss 12 -t 3 -i tests-support/recordings/run.mp4 -vf "fps=30,scale=960:-1" tests-support/recordings/win/%04d.png
+# crop a gauge or the damage-number area to read it more reliably
+ffmpeg -ss 12 -t 3 -i run.mp4 -vf "fps=30,crop=400:120:760:900" crop/%04d.png
+```
+
+Frame N at F fps = time (N-1)/F from the start time. Skim the overview first to find each action, then
+extract short full-rate windows around them.
+
+## What to get, and where it goes
+
+- **Action times** (start of one input to the next): `DEFAULT_TIMES` in `src/engine/rotation/timing.ts`, or a
+  per-move `seconds` in that character's machine when one move differs from its kind.
+- **Concerto / Frostheart / other gauges** after each move: compare with the simulator (run the same rotation,
+  as in the "in-game … rotation" test) and fix `actions.ts` / the data build where they differ.
+  `FROSTHEART_GAIN` is a placeholder until measured.
+- **Damage numbers:** compare with the simulator's per-move damage using the same builds and enemy. ToA floors
+  have buffs; get the floor's buff text (screenshot) and account for it. Glacio Bite per-stack values and
+  `NEGATIVE_STATUS_BASE` (`src/engine/rotation/chafe.ts`) are estimates waiting for these numbers.
+
+Report what was measured, the frame/time it came from, and what changed in the code. Delete extracted frames
+when done.

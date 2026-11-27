@@ -231,12 +231,31 @@ for (const p of load<any[]>('BinData/phantom/phantomitem.json')) {
   if (p.QualityId !== 5 || echoesById.has(p.MonsterId)) continue;
   const sk = phantomSkills.get(p.SkillId);
   const lastLevel = sk?.LevelDescStrArray?.at(-1)?.ArrayString ?? [];
+  const desc = sk ? rich(T(sk.DescriptionEx), lastLevel) : '';
+  // the echo skill's hits: one per damage entry, at the highest rank; the element from the text when the entry has none
+  const textElement = (desc.match(/\b(Glacio|Fusion|Electro|Aero|Spectro|Havoc|Physical) DMG/) ?? [])[1] as Element | undefined;
+  const hits: HitTerm[] = (sk?.SettleIds ?? []).map((id: number) => damage.get(id)).filter(Boolean).map((d: any): HitTerm => ({
+    pct: Array(10).fill((d.RateLv?.at(-1) ?? 0) / 100),
+    count: 1,
+    element: (d.Element ? ELEMENTS[d.Element] : undefined) ?? textElement ?? 'Physical',
+    scaling: SCALING[d.RelatedProperty] ?? 'atk',
+    dmgType: 'Echo',
+    damageIds: [d.Id],
+    ...(d.ElementPower?.[0] ? { concerto: d.ElementPower[0] / 100 } : {}),
+    ...(d.Energy?.[0] ? { energy: d.Energy[0] / 100 } : {}),
+  })).filter((h: HitTerm) => h.pct[0] > 0)
+    // the text names each multiplier once; entries repeating one are variants of the same hit (charged / uncharged)
+    .filter((h: HitTerm, i: number, all: HitTerm[]) => all.findIndex((x) => x.pct[0] === h.pct[0] && x.element === h.element) === i);
+  // keep the hits the text talks about (others are hidden variants), unless that would leave none
+  const textPcts = [...desc.matchAll(/([\d.]+)%/g)].map((m) => Number(m[1]));
+  const named = hits.filter((h) => textPcts.some((p) => Math.abs(p - h.pct[0]) < 0.02));
+  if (named.length) hits.splice(0, hits.length, ...named);
   echoesById.set(p.MonsterId, {
     id: p.MonsterId,
     name: T(p.MonsterName),
     cost: rarityCost.get(p.Rarity) ?? 1,
     sets: p.FetterGroup ?? [],
-    skill: { description: sk ? rich(T(sk.DescriptionEx), lastLevel) : '', cooldown: sk?.SkillCD },
+    skill: { description: desc, cooldown: sk?.SkillCD, ...(hits.length ? { hits } : {}) },
     icon: asset(p.Icon),
     iconBig: asset(p.IconBig),
   });

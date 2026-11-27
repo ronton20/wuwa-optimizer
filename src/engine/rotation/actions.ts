@@ -47,7 +47,22 @@ export interface Move {
   seconds?: number;
   /** stack counts this move sets for its own hits, by effect id (Lucilla S6: Remembrance = Photos spent) */
   levels?: Record<string, number>;
+  /** Glacio Chafe stacks the move inflicts on the target */
+  chafe?: number;
+  /** consumes 10 Glacio Bite to trigger Frostbind when the target has 10+ (Hiyuki: Inward Vision, Iai) */
+  frostbind?: boolean;
 }
+
+/** Glacio Chafe each damage row inflicts, from the kit texts (Hiyuki's checked against her in-game sheet). */
+export const CHAFE_ROWS: Record<string, Record<string, number>> = {
+  Hiyuki: {
+    'Basic Attack - Present Self Stage 3 DMG': 1, 'Heavy Attack - Frost Splinter: Present Self DMG': 1, 'Foreclaiming: Inward Vision DMG': 4,
+    'Skill DMG': 1, 'Basic Attack - Foreclaimed Self Stage 3 DMG': 1, 'Basic Attack - Foreclaimed Self Stage 4 DMG': 1, 'Basic Attack - Foreclaimed Self Stage 5 DMG': 1,
+    'Mid-air Attack - Foreclaimed Self Stage 2 DMG': 1, 'Mid-air Plunging Attack - Foreclaimed Self DMG': 1, 'Heavy Attack - Bitterfrost: Foreclaimed Self DMG': 1,
+  },
+  Lucilla: { 'Clip It DMG': 1, 'Clip It: Hard Cut DMG': 1 },
+  Suisui: { 'Awakening Spring DMG': 1, 'Skill DMG': 1, 'Basic Attack - Drizzle Stance Stage 4 DMG': 1 },
+};
 
 export type TimingKind = 'basic' | 'heavy' | 'skill' | 'liberation' | 'echo' | 'intro' | 'outro' | 'forte' | 'dodge' | 'air';
 
@@ -203,7 +218,7 @@ function hiyukiMachine(c: Character, sequence = 0): Machine {
   const g = genericMachine(c);
   const present = [1, 2, 3].map((n) => `Basic Attack - Present Self Stage ${n} DMG`);
   const fore = [1, 2, 3, 4, 5].map((n) => `Basic Attack - Foreclaimed Self Stage ${n} DMG`);
-  const R = (s: MachineState) => ({ dedication: 0, frostheart: 0, iai: 0, bitterfrost: 0, blades: 0, enhanced: 0, ready: 0, bonus: 0, ...s.res });
+  const R = (s: MachineState) => ({ dedication: 0, frostheart: 0, iai: 0, bitterfrost: 0, blades: 0, enhanced: 0, ready: 0, bonus: 0, s1: 0, ...s.res });
   // S2: out of combat for 4s (the start of a fight) restores 3 Snowforged Blade, and the next 2 Jade Cleave /
   // Petalfall restore 50 more Frostheart each
   const start: Record<string, number> = sequence >= 2 ? { blades: 3, bonus: 2 } : {};
@@ -246,7 +261,9 @@ function hiyukiMachine(c: Character, sequence = 0): Machine {
       if (b === 'basic') {
         const list = form === 'fore' ? fore : present;
         const n = s.next !== undefined ? s.next : s.family === form ? s.stage % list.length : 0;
-        if (form === 'fore') return { move: m('Normal', list[n], 'basic', ['basic']), state: keep({ stage: n + 1 }, { frostheart: heart(FROSTHEART_GAIN.basic) }) };
+        // S1: after Inward Vision, Foreclaimed Basic 1 and 2 also inflict Glacio Chafe
+        const s1 = form === 'fore' && n < 2 && (r.s1 ?? 0) > 0;
+        if (form === 'fore') return { move: m('Normal', list[n], 'basic', ['basic'], s1 ? { chafe: 1 } : {}), state: keep({ stage: n + 1 }, { frostheart: heart(FROSTHEART_GAIN.basic), ...(s1 ? { s1: r.s1 - 1 } : {}) }) };
         const third = n === 2;
         return { move: m('Normal', list[n], 'basic', ['basic']), state: keep({ stage: n + 1 }, third ? { dedication: ded(r.enhanced ? 200 : 100), enhanced: 0 } : {}) };
       }
@@ -281,13 +298,13 @@ function hiyukiMachine(c: Character, sequence = 0): Machine {
           };
         }
         const warn = r.ready ? undefined : 'Inward Vision becomes available after Frost Splinter';
-        return { move: m('Liberation', 'Foreclaiming: Inward Vision DMG', 'liberation', ['liberation'], { cast: true, warn }), state: { stage: 0, family: 'fore', form: 'fore', res: { ...r, ready: 0, iai: 3, dedication: 0, frostheart: 0 } } };
+        return { move: m('Liberation', 'Foreclaiming: Inward Vision DMG', 'liberation', ['liberation'], { cast: true, warn, frostbind: true }), state: { stage: 0, family: 'fore', form: 'fore', res: { ...r, ready: 0, iai: 3, dedication: 0, frostheart: 0, s1: sequence >= 1 ? 2 : 0 } } };
       }
       if (b === 'iai') {
         // Iai is a dash: she stays where she is (ground or air)
         const warn = form !== 'fore' ? 'Iai is only in Foreclaimed Self' : r.frostheart < 100 ? `Iai needs 100 Frostheart (has ${r.frostheart})` : undefined;
         const res = { frostheart: Math.max(0, r.frostheart - 100), ...(r.iai > 0 ? { iai: r.iai - 1, bitterfrost: Math.min(3, r.bitterfrost + 1) } : {}) };
-        return { move: m('Forte', 'Basic Attack - Iai DMG', 'forte', ['basic', 'forte'], { warn }), state: keep({ air: !!s.air }, res) };
+        return { move: m('Forte', 'Basic Attack - Iai DMG', 'forte', ['basic', 'forte'], { warn, chafe: r.iai > 0 ? 3 : 0, frostbind: true }), state: keep({ air: !!s.air }, res) };
       }
       if (b === 'intro') {
         return { move: mk(c, 'Intro', [ref('Intro', 'Skill DMG')], 'intro', ['intro'], { cast: true }), state: keep({ next: form === 'fore' ? 1 : 2 }, form === 'present' ? { dedication: ded(200) } : {}) };
@@ -373,7 +390,7 @@ function lucillaMachine(c: Character): Machine {
           const rows: RowRef[] = [1, 2, 3].map((n) => ref('Liberation', `Basic Attack - Tracing Forms Stage ${n} DMG`));
           if (p) rows.push({ ...ref('Forte', 'Oblivion DMG'), times: p });
           rows.push(ref('Liberation', 'Letting It Go DMG'));
-          return { move: { ...mk(c, 'Liberation', rows, 'basic', ['basic'], { concerto: 20, levels: { 'c.luc.s6': p, 'c.luc.s4': p } }), label: `Basic Attack - Tracing Forms 1-2-3 + Oblivion ×${p} + Letting It Go`, timing: 'basic', seconds: 4 }, state: at('normal', {}, { trace: 0 }) };
+          return { move: { ...mk(c, 'Liberation', rows, 'basic', ['basic'], { concerto: 20, levels: { 'c.luc.s6': p, 'c.luc.s4': p }, tags: { chafeMode: p } }), label: `Basic Attack - Tracing Forms 1-2-3 + Oblivion ×${p} + Letting It Go`, timing: 'basic', seconds: 4 }, state: at('normal', {}, { trace: 0 }) };
         }
         const n = s.next !== undefined ? s.next : s.family === 'basic' ? s.stage % 3 : 0;
         if (n < 2) return { move: mk(c, 'Normal', [ref('Normal', `Basic Attack Stage ${n + 1} DMG`)], 'basic', ['basic']), state: { ...at('normal', { stage: n + 1 }), family: 'basic' } };
@@ -386,12 +403,12 @@ function lucillaMachine(c: Character): Machine {
         const spot = (option ?? 0) === 0;
         const choice: Choice = { label: 'Resonance Skill', options: ['Spotlight', 'Compensate'], value: spot ? 0 : 1 };
         // both chain into Basic Stage 2
-        return { move: mk(c, 'Skill', [ref('Skill', spot ? 'Spotlight DMG' : 'Compensate DMG')], 'skill', ['skill'], { choice, ...(spot ? { concerto: 20 } : {}) }), state: { ...at('normal', { next: 1 }, { trace: trace(spot ? 50 : 25) }), family: 'basic' } };
+        return { move: mk(c, 'Skill', [ref('Skill', spot ? 'Spotlight DMG' : 'Compensate DMG')], 'skill', ['skill'], { choice, ...(spot ? { concerto: 20, tags: { chafeMode: 1 } } : {}) }), state: { ...at('normal', { next: 1 }, { trace: trace(spot ? 50 : 25) }), family: 'basic' } };
       }
       if (b === 'liberation') {
         if (form === 'remi') return { move: mk(c, 'Liberation', [], 'liberation', [], { warn: "Lucilla can't cast her Liberation in Reminiscence" }), state: s };
         const warn = photos(r.trace) < 3 ? `Clear As Day needs 3 Photos (has ${photos(r.trace)})` : undefined;
-        return { move: mk(c, 'Liberation', [ref('Liberation', 'Clear As Day DMG')], 'liberation', ['liberation'], { cast: true, warn }), state: at('remi', {}) };
+        return { move: mk(c, 'Liberation', [ref('Liberation', 'Clear As Day DMG')], 'liberation', ['liberation'], { cast: true, warn, tags: { filmRoll: 4 } }), state: at('remi', {}) };
       }
       if (b === 'intro') {
         if (form === 'remi') return { move: mk(c, 'Intro', [ref('Intro', 'Clip It: Hard Cut DMG')], 'intro', ['intro'], { cast: true }), state: at('remi', {}) };

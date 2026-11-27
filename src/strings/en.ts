@@ -34,7 +34,7 @@ export const STAT_LABEL: Record<StatKey, string> = {
 
 export const SKILL_LABEL: Record<SkillKind, string> = {
   Normal: 'Normal Attack', Skill: 'Resonance Skill', Forte: 'Forte Circuit', Liberation: 'Resonance Liberation',
-  Intro: 'Intro Skill', Outro: 'Outro Skill', Inherent: 'Inherent Skill', TuneBreak: 'Tune Break',
+  Intro: 'Intro Skill', Outro: 'Outro Skill', Inherent: 'Inherent Skill', TuneBreak: 'Tune Break', Echo: 'Echo Skill',
 };
 
 export const ui = {

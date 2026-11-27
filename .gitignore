@@ -28,5 +28,7 @@ public/img/
 
 # WuwaBot cards used by the import tests (they show your UID, keep them out of the public repo)
 tests-support/cards/
+# gameplay recordings and frames extracted from them (may show the UID)
+tests-support/recordings/
 # OCR files copied from node_modules at build time
 public/ocr/

@@ -329,4 +329,58 @@ describe('rotation simulation', () => {
     const r5 = simulate({ steps: [...press(L, 'skill', 'skill', 'skill'), ...press(L, 'liberation', 'basic')] }, b5, data);
     expect(hit(3) / r5.moves.at(-1)!.hits.find((h) => h.row.row === 'Letting It Go DMG')!.value).toBeGreaterThan(2);
   });
+
+  it("the Echo button hits with the build's main echo", () => {
+    const echo = data.echoes.find((e) => e.name === 'Sentry Construct')!;
+    const b = team();
+    b[char(H).id] = { ...b[char(H).id], echoes: [{ echoId: echo.id, setId: echo.sets[0], main: { stat: 'critRate', value: 22 }, subs: [] }, null, null, null, null] };
+    const r = simulate({ steps: press(H, 'echo') }, b, data);
+    expect(r.moves[0].move.label).toBe('Echo Skill - Sentry Construct');
+    expect(r.moves[0].damage).toBeGreaterThan(0);
+    // and no echo: no damage, no warning
+    const none = simulate({ steps: press(H, 'echo') }, team(), data);
+    expect(none.moves[0].damage).toBe(0);
+  });
+
+  it('Glacio Chafe: stacks per move, Frostbind, Snow Rust, Film Roll and Snow Rust Glacio Bite', () => {
+    const b = team();
+    b[char(H).id] = { ...b[char(H).id], sequence: 6 };
+    const steps: RotationStep[] = [
+      ...press(S, 'skill', 'skill', 'skill', 'skill', 'basic', 'basic', 'basic', 'basic', 'skill'), // Zephyr Skill ×4 fills Cloud Breath → Awakening Spring
+      { char: char(L).id, button: 'skill', swap: 'intro' }, ...press(L, 'liberation', 'basic'),
+      { char: char(H).id, button: 'basic', swap: 'intro' }, ...press(H, 'heavy', 'liberation'),
+    ];
+    const r = simulate({ steps }, b, data);
+    const ch = r.moves.filter((m) => m.chafe);
+    expect(ch.length).toBeGreaterThan(4);
+    // Lucilla's Film Roll adds 2 when Hiyuki inflicts (Intro: 1 + 2)
+    const intro = r.moves.find((m) => m.char === char(H).id && m.move.kind === 'Intro')!;
+    expect(intro.chafe!.inflicted).toBe(3);
+    // Inward Vision at 10+ stacks triggers Frostbind
+    const iv = r.moves.find((m) => /Inward Vision/.test(m.move.label))!;
+    expect(iv.chafe!.frostbind).toBe(true);
+    // Snow Rust 3 (all three inflicted), and Hiyuki's own Glacio Chafe adds Glacio Bite hits
+    expect(intro.chafe!.snowRust).toBe(3);
+    expect(intro.chafe!.bites).toBeGreaterThan(0);
+    expect(intro.hits.some((h) => /Glacio Bite/.test(h.row.row))).toBe(true);
+    // Suisui's and Lucilla's own Glacio Chafe off Hiyuki's field time adds no Glacio Bite
+    expect(r.moves.filter((m) => m.char !== char(H).id).every((m) => !m.chafe?.bites)).toBe(true);
+    // at S0 (Snow Rust 2 needs two inflicting Resonators) the multiplier is 102% instead of 590%
+    const s0 = simulate({ steps }, team(), data).moves.find((m) => m.char === char(H).id && m.move.kind === 'Intro')!;
+    const bite = (m: typeof intro) => m.hits.find((h) => /Glacio Bite/.test(h.row.row))!.value;
+    expect(bite(intro) / bite(s0)).toBeGreaterThan(5);
+  });
+
+  it('weapons that restore Concerto on a Skill or Liberation count (Variation R5: +16 per Resonance Skill)', () => {
+    const w = data.weapons.find((x) => x.name === 'Variation')!;
+    const b = team();
+    const plain = simulate({ steps: press(S, 'skill') }, b, data).moves[0].concerto;
+    b[char(S).id] = { ...b[char(S).id], weapon: { id: w.id, rank: 5 } };
+    expect(simulate({ steps: press(S, 'skill') }, b, data).moves[0].concerto).toBeCloseTo(plain + 16);
+    const lull = data.weapons.find((x) => x.name === 'Lullaby')!;
+    b[char(S).id] = { ...b[char(S).id], weapon: { id: lull.id, rank: 1 } };
+    // +8 on Liberation, once every 20s
+    const r = simulate({ steps: press(S, 'liberation', 'liberation') }, b, data);
+    expect(r.moves[1].concerto - r.moves[0].concerto).toBeCloseTo(20);
+  });
 });

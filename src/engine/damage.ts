@@ -92,6 +92,17 @@ export interface DamageOptions {
   disable?: (e: Effect) => boolean;
   /** level override per effect (the rotation simulator: timed buffs are on only while they last); undefined = keep */
   level?: (a: ActiveEffect) => number | undefined;
+  /** also compute the main echo's skill (kind 'Echo', row "Echo Skill DMG") */
+  echo?: boolean;
+}
+
+export const ECHO_ROW = 'Echo Skill DMG';
+
+/** The build's main echo skill as a skill of its own, when the game data has its damage. */
+export function echoSkill(build: Build, data: GameData): Skill | undefined {
+  const e = build.echoes[0] && data.echoes.find((x) => x.id === build.echoes[0]!.echoId);
+  if (!e?.skill.hits?.length) return undefined;
+  return { id: e.id, kind: 'Echo', name: e.name, description: e.skill.description, icon: e.icon, maxLevel: 1, rows: [{ label: ECHO_ROW, values: [], hits: e.skill.hits }] };
 }
 
 /** Damage of every hit of every skill for a build. */
@@ -108,7 +119,8 @@ export function computeDamage(build: Build, data: GameData, opts: DamageOptions 
   const bare = opts.noBreakdown ? full : computeStats(build, data, effects, BREAKDOWN_GROUPS);
 
   const hits: HitResult[] = [];
-  for (const skill of c.skills) {
+  const echo = opts.echo ? echoSkill(build, data) : undefined;
+  for (const skill of echo ? [...c.skills, echo] : c.skills) {
     if (opts.only && skill.kind !== opts.only.skillKind) continue;
     const level = Math.min(build.skillLevels[skill.kind] ?? 10, 10);
     for (const row of skill.rows) {
