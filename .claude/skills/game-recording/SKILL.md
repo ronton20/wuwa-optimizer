@@ -10,8 +10,7 @@ Claude can't play a video; extract frames with ffmpeg and read them as images.
 ## Setup
 
 - ffmpeg on PATH (`winget install ffmpeg`).
-- Keep recordings and frames out of git: put them in `tests-support/recordings/` (add the folder to
-  `.gitignore` if it isn't there). They may show the UID too.
+- Recordings and frames stay in `tests-support/recordings/<Name>/` (gitignored). They may show the UID too.
 
 ## Extract
 
@@ -29,14 +28,14 @@ extract short full-rate windows around them.
 
 ## What to get, and where it goes
 
-- **Action times** (start of one input to the next): `DEFAULT_TIMES` in `src/engine/rotation/timing.ts`, or a
-  per-move `seconds` in that character's machine when one move differs from its kind.
+- **Action times:** follow the `model-character-timings` skill (they go in `src/engine/rotation/recordedTimes.ts`).
 - **Concerto / Frostheart / other gauges** after each move: compare with the simulator (run the same rotation,
   as in the "in-game … rotation" test) and fix `actions.ts` / the data build where they differ.
   `FROSTHEART_GAIN` is a placeholder until measured.
 - **Damage numbers:** compare with the simulator's per-move damage using the same builds and enemy. ToA floors
-  have buffs; get the floor's buff text (screenshot) and account for it. Glacio Bite per-stack values and
-  `NEGATIVE_STATUS_BASE` (`src/engine/rotation/chafe.ts`) are estimates waiting for these numbers.
+  have buffs; get the floor's buff text (screenshot) and account for it. `NEGATIVE_STATUS_FACTOR`
+  (`src/engine/negative.ts`) is unconfirmed: one measured Negative Status hit (e.g. a Glacio Bite number with the
+  enemy's level and RES known) settles it.
 
 Report what was measured, the frame/time it came from, and what changed in the code. Delete extracted frames
 when done.

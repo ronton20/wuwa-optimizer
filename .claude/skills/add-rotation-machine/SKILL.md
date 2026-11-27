@@ -5,6 +5,8 @@ description: Model a Resonator's rotation state machine (what each button does i
 
 # Add or fix a character's rotation machine
 
+Part of `model-character` (its step 5). Action times are not set here: see `model-character-timings`.
+
 A machine turns button presses into the moves the game performs. Every character has the same buttons
 (`basic`, `heavy`, `skill`, `liberation`, `echo`) plus kit specials (Hiyuki's `iai`). Read `hiyukiMachine`,
 `suisuiMachine` and `lucillaMachine` in `src/engine/rotation/actions.ts` first; copy their shape.
@@ -12,16 +14,7 @@ A machine turns button presses into the moves the game performs. Every character
 ## 1. Read the kit, don't guess
 
 ```bash
-npx tsx -e "
-import data from './src/data/current';
-const clean = (s = '') => s.replace(/\[\/?c[^\]]*\]/g, '').replace(/\s+/g, ' ');
-const c = data.characters.find((x) => x.name === 'NAME')!;
-for (const s of c.skills) {
-  console.log('=== ' + s.kind + ' · ' + s.name + '\n' + clean(s.description));
-  for (const r of s.rows) console.log('   ', r.hits?.length ? 'HIT' : 'row', r.label, r.values.at(-1) ?? '');
-}
-c.sequences.forEach((s, i) => console.log('S' + (i + 1) + ': ' + clean(s.description)));
-"
+npm run kit -- "NAME"   # every skill text, row label, hit term, sequence
 ```
 
 Note, from the text: forms/stances and how they're entered and left; resources (gain per move, cost, max);
@@ -43,7 +36,7 @@ the checked values in a test.
 - Multi-hit moves: several `RowRef`s, `times` for repeats, `bonus` for an extra multiplier row.
 - Sequences: the factory gets `sequence`; e.g. Hiyuki S2 starts with 3 Snowforged Blade.
 - `swappedOut`: what resets when the character leaves. `gauges`: resources shown on the buttons.
-- Register in `MACHINES`. Rows that inflict Glacio Chafe go in `CHAFE_ROWS`.
+- Register in `MACHINES`. Rows that inflict a Negative Status go in `STATUS_ROWS` (status, stacks, `fromSeq`, `mode`).
 
 ## 3. Test
 

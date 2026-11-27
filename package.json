@@ -14,6 +14,7 @@
     "data:fetch": "tsx scripts/data/fetch.ts",
     "data:build": "tsx scripts/data/build.ts",
     "data:images": "tsx scripts/data/images.ts",
+    "kit": "tsx scripts/data/kit.ts",
     "data": "npm run data:fetch && npm run data:build"
   },
   "dependencies": {

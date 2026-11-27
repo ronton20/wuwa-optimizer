@@ -217,7 +217,10 @@ function SkillDetail({ skill, level, onLevel, toggle }: { skill: Skill; level: n
           <tbody>
             {skill.rows.map((r, i) => (
               <tr key={i} className="border-t border-white/5">
-                <td className={`py-1.5 pr-3 ${r.hits ? 'text-ink' : 'text-muted'}`}>{r.label}</td>
+                <td className={`py-1.5 pr-3 ${r.hits ? 'text-ink' : 'text-muted'}`}>
+                  {r.label}
+                  {r.fromText && <span className="ml-2 text-xs text-muted" title={ui.fromTextHint}>{ui.fromText(r.seq)}</span>}
+                </td>
                 <td className="tabular py-1.5 text-right text-gold-soft">{r.values[lv - 1] ?? r.values.at(-1)}</td>
               </tr>
             ))}

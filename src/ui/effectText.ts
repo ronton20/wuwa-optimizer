@@ -21,6 +21,7 @@ export function scopeText(f?: HitFilter): string {
   if (f.dmgTypes) parts.push(f.dmgTypes.map((t) => `${t} DMG`).join(' / '));
   if (f.skillKinds && !f.rows) parts.push(f.skillKinds.map((k) => SKILL_LABEL[k]).join(' / '));
   if (f.rows) parts.push(f.label ?? 'specific hits');
+  if (f.statuses) parts.push(`${f.statuses.join(' / ')} DMG (rotations)`);
   return parts.length ? `${parts.join(', ')} only` : '';
 }
 

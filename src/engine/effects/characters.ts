@@ -6,8 +6,8 @@ import type { Effect } from '../types';
  * `seq` = sequence node that unlocks the effect (0 = always available).
  * Effects with `team: true` are what this character gives to others when slotted as a teammate (Phase 3).
  *
- * Effects that only touch special damage types not modelled yet (Glacio Bite, Aero Erosion DMG,
- * Juque Perdition, Core of Collapse…) are left out for now and listed in NOT_MODELLED.
+ * Effects that only touch damage types not modelled yet (Tune Rupture, Core of Collapse…) are left out for now
+ * and listed in NOT_MODELLED. Negative Status DMG buffs use `appliesTo.statuses` (simulated in rotations).
  */
 export interface KitEffect extends Effect { seq: number; maxSeq?: number; team?: boolean }
 
@@ -72,6 +72,8 @@ export const KITS: Record<string, KitEffect[]> = {
       mods: [{ key: 'amplify', value: 0, byStacks: bladeAmplify }], appliesTo: { rows: /^Blade of Howling Squall/, label: 'Blade of Howling Squall' } },
     { seq: 1, id: 'c.carte.s1', group: 'sequence', source: 'S1 · Crown Destined by Fate', text: 'Fleurdelys Crit. DMG +25% per Conviction milestone',
       condition: { kind: 'stacks', label: 'Conviction milestones', max: 4, default: 'max' }, mods: [{ key: 'critDmg', value: 25 }], appliesTo: { skillKinds: ['Forte'] } },
+    { seq: 0, id: 'c.carte.mandate', group: 'self', source: "Liberation · A Knight's Heartfelt Prayers", text: 'Fleurdelys with Mandate of Divinity in Manifest: Aero Erosion DMG Amplified',
+      condition: { kind: 'toggle', label: 'Fleurdelys has Mandate of Divinity in Manifest', default: true }, mods: [{ key: 'amplify', value: 50 }], appliesTo: { statuses: ['Aero Erosion'] } },
     { seq: 2, id: 'c.carte.s2max', group: 'sequence', source: 'S2 · Blade Broken by Tempest', text: 'Affects nearby targets',
       condition: { kind: 'toggle', label: 'After A Knight\'s Heartfelt Prayers', default: true }, mods: [],
       raisesMax: { key: 'c.carte.imprint', by: 3, exclusive: 'negativeStatusMax' } },
@@ -470,20 +472,18 @@ export const KITS: Record<string, KitEffect[]> = {
 
 /** Shown in the UI so users know these parts of the kit aren't in the numbers yet. */
 export const NOT_MODELLED: Record<string, string[]> = {
-  Hiyuki: ['Glacio Bite DMG and its Amplify bonuses (Snow Rust 1–3, S6 3 stacks)', 'Outro: Glacio Amplify for teammates (Phase 3)'],
-  Cartethyia: ['Aero Erosion DMG', 'Outro: Aero Amplify for teammates (Phase 3)'],
-  Qingxiao: ['Juque Perdition (S1)', 'Outro: 800% ATK Aero hit'],
+  Hiyuki: ['Glacio Bite DMG and its Snow Rust / S6 Amplify: rotations only', 'Outro: Glacio Amplify for teammates (Phase 3)'],
+  Cartethyia: ['Aero Erosion DMG: rotations only; her stack limit raises (inherent, S2) and Fleurdelys’ halved tick interval aren’t simulated', 'S2: 3 Aero Erosion + an immediate Aero Erosion hit', 'Outro: Aero Amplify for teammates (Phase 3)'],
   Chisa: ['S1 fixed 61,803 Havoc DMG', 'S6 Negative Status Amplify', 'Sawring - Eradication Ring of Chainsaw bonus'],
-  Hsin: ['Electro Flare DMG: Thunderglow / Fleeting Thunder, S1 Heart of Thunder, S3 extra Electro Flare hit, S6 Electro Flare crits', 'Unison Boon from Hsin for teammates'],
+  Hsin: ['Electro Flare from Formshift and Fleeting Thunder (filling to the stack limit), Thunderglow / Heart of Thunder hits (S1), S3 extra Electro Flare hit, S6 Electro Flare crits', 'Unison Boon from Hsin for teammates'],
   Suisui: ['Healing (Enrichment, Spring\'s Birth, Plume Step)'],
-  Lucilla: ['Glacio Chafe DMG and its Amplify (Outro, S2)', 'Film Roll extra Glacio Chafe', 'Her own hits in Resonance Mode - Echo count as Echo Skill DMG in game; here they stay Basic Attack DMG'],
-  Ciaccona: ['Aero Erosion DMG and the Outro\'s Aero Erosion Amplify', 'S6 Solo Concert hit (220% ATK)'],
-  'Rover: Electro': ['Electro Flare DMG (Overshock 10 stacks, S2 5 stacks)'],
+  Lucilla: ['Her own hits in Resonance Mode - Echo count as Echo Skill DMG in game; here they stay Basic Attack DMG'],
+  Ciaccona: ['Yellow Tonic’s Spectro Frazzle (her Tonic always counts as Green: Aero Erosion)'],
+  'Rover: Electro': ['Electro Flare DMG: rotations only'],
   Lily: ['Healing and shields', 'Dream Aroma / Silvered Dream (buffs for teammates — see the Team tab)'],
   Suoming: ['Unison Boon for teammates beyond Suoming herself', 'Aligned Seals / S2 Outro buffs (see the Team tab)'],
   Aemeath: ['Tune Rupture / Fusion Burst DMG (Trails, Starburst, S2 and S6 effects)'],
-  Carlotta: ['S3 Kaleidoscope Sparks Outro hit'],
-  Denia: ['Fusion Burst DMG and its Outro Amplify', 'Tune Break Boost (Tune Strain mode)', 'Void Particle hits counting as Resonance Liberation DMG', 'S3 Dark Core 1200% hit'],
+  Denia: ['S6: Fusion Burst +200% multiplier on the main target without clearing the stacks', 'Fusion Burst’s once-per-2s-per-skill limit','Tune Break Boost (Tune Strain mode)', 'Void Particle hits counting as Resonance Liberation DMG', 'S3 Dark Core 1200% hit'],
   Lynae: ['Tune Rupture DMG and Tune Break Boost'],
   Mornye: ['Healing, Interfered Marker DMG increase', 'Tune Rupture Response - Particle Jet bonus (S5)'],
   Shorekeeper: ['Healing'],

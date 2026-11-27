@@ -1,4 +1,4 @@
-import type { DmgType, Element, SkillKind, StatKey } from '../data/types';
+import type { DmgType, Element, NegativeStatus, SkillKind, StatKey } from '../data/types';
 
 // ---------------------------------------------------------------- build (what the user sets)
 
@@ -77,6 +77,8 @@ export interface HitFilter {
   rows?: RegExp;
   /** plain-words name of what `rows` matches, shown in the Buffs tab */
   label?: string;
+  /** Negative Status damage ("Glacio Chafe DMG is Amplified"); such an effect reaches only that status's hits */
+  statuses?: NegativeStatus[];
 }
 
 export type SourceGroup = 'weapon' | 'echo' | 'sequence' | 'self' | 'team' | 'enemy';

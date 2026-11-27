@@ -165,4 +165,14 @@ export const ui = {
   bonusStats: 'Bonuses',
   topHit: 'Strongest hit',
   multiplier: 'Multiplier',
+  time: 'Time',
+  negativeIncl: 'incl. Negative Status',
+  estimate: '(estimate)',
+  negativeHint: 'Glacio Chafe / Bite, Aero Erosion, Spectro Frazzle, Electro Flare and Fusion Burst damage: the game’s per-stack multipliers × the level base, not yet checked against an in-game number.',
+  fromText: (seq?: number) => (seq ? `from S${seq} text` : 'from the skill text'),
+  fromTextHint: 'Not a Skill Detail row in the game: the multiplier is read from the skill or sequence description.',
+  /** where a rotation step's default time comes from */
+  timeSource: {
+    recorded: '(measured from a recording)', estimate: '(estimate)', default: '(placeholder)', frozen: '(clock stopped)',
+  } as Record<string, string>,
 };

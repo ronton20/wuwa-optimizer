@@ -130,7 +130,8 @@ const PASSIVES: Record<string, (v: V) => Def[]> = {
 
   // ---------------------------------------------------------------- Rectifier
   'Blooming Jadehaven': (v) => [{ id: 'w.jadehaven', text: 'After Electro Flare / Unison Response: Resonance Skill DMG Amplified, ignores Electro RES',
-    condition: tog('Inflicted Electro Flare or triggered Unison Response'), mods: [{ key: 'amplify', value: v(1) }, { key: 'resShred', value: v(2) }], appliesTo: { dmgTypes: ['Skill'] } }],
+    condition: tog('Inflicted Electro Flare or triggered Unison Response'), mods: [{ key: 'amplify', value: v(1) }, { key: 'resShred', value: v(2) }], appliesTo: { dmgTypes: ['Skill'] } },
+  { id: 'w.jadehaven.flare', text: 'Wielder on the field: Electro Flare DMG taken Amplified', condition: tog('Wielder is the active Resonator'), mods: [{ key: 'amplify', value: v(3) }], appliesTo: { statuses: ['Electro Flare'] } }],
   'Boson Astrolabe': (v) => [{ id: 'w.boson', text: 'After a team Tune Break: ATK and Basic Attack DMG', condition: tog('Team cast a Tune Break'), mods: [{ key: 'atkPct', value: v(1) }, { key: 'dmgBasic', value: v(2) }] }],
   'Cosmic Ripples': (v) => [{ id: 'w.cosmic', text: 'Basic Attack hits: Basic Attack DMG per stack', condition: stk('Cosmic Ripples stacks', v(2)), mods: [{ key: 'dmgBasic', value: v(1) }] }],
   "Firstlight's Herald": (v) => [{ id: 'w.firstlight.self', text: 'Snow Taint + Ripples: team ATK', condition: tog('Snow Taint + Ripples'), mods: [{ key: 'atkPct', value: v(6) }] }],
@@ -184,6 +185,7 @@ const PASSIVES: Record<string, (v: V) => Def[]> = {
     condition: tog('Inflicted Tune Rupture - Shifting or Fusion Burst'), mods: [{ key: 'defIgnore', value: v(1) }, { key: 'resShred', value: v(2) }], appliesTo: { dmgTypes: ['Liberation'], element: 'Fusion' } }],
   Frostburn: (v) => [
     { id: 'w.frostburn.chafe', text: 'After applying Glacio Chafe: Glacio DMG is Amplified', condition: tog('Applied Glacio Chafe'), mods: [{ key: 'amplify', value: v(1) }], appliesTo: { element: 'Glacio' } },
+    { id: 'w.frostburn.status', text: 'Wielder on the field: Glacio Chafe DMG Amplified', condition: tog('Wielder is the active Resonator'), mods: [{ key: 'amplify', value: v(3) }], appliesTo: { statuses: ['Glacio Chafe'] } },
     { id: 'w.frostburn.lib', text: "After applying Glacio Chafe: Resonance Liberation DMG ignores part of the target's DEF", condition: tog('Applied Glacio Chafe', true, 'w.frostburn.chafe'), mods: [{ key: 'defIgnore', value: v(2) }], appliesTo: { dmgTypes: ['Liberation'] } },
   ],
   'Glint of Clouds': (v) => [

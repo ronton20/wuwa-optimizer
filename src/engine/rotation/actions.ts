@@ -1,4 +1,4 @@
-import type { Character, GameData, Skill, SkillKind } from '../../data/types';
+import type { Character, GameData, NegativeStatus, Skill, SkillKind } from '../../data/types';
 
 /**
  * Buttons and the machines that turn button presses into what the game actually does.
@@ -53,15 +53,52 @@ export interface Move {
   frostbind?: boolean;
 }
 
-/** Glacio Chafe each damage row inflicts, from the kit texts (Hiyuki's checked against her in-game sheet). */
-export const CHAFE_ROWS: Record<string, Record<string, number>> = {
+/** Stacks of a Negative Status a damage row inflicts. */
+export interface Inflicts {
+  status: NegativeStatus;
+  stacks: number;
+  /** from this sequence on it inflicts this many instead: [sequence, stacks] */
+  fromSeq?: [number, number];
+  /** only in this Resonance Mode: [condition key, option index] */
+  mode?: [string, number];
+}
+const inf = (status: NegativeStatus, stacks: number, extra: Partial<Inflicts> = {}): Inflicts => ({ status, stacks, ...extra });
+const each = (rows: string[], i: Inflicts) => Object.fromEntries(rows.map((r) => [r, i]));
+
+/**
+ * Negative Status stacks each damage row inflicts, from the kit texts (Hiyuki's checked against her in-game sheet).
+ * Keys are the row label, or "Kind|Row label" where several skills share a label. Glacio Chafe becomes Glacio Bite
+ * with Hiyuki in the team (rotation/status.ts).
+ * Not row-based, so not here yet: Chisa's / Yangyang: Xuanling's Havoc Bane, Buling's array, Aemeath's refill,
+ * Phoebe's Confession Enhancement, Hsin's Formshift / Fleeting Thunder, Cartethyia S2, Ciaccona's Yellow Tonic.
+ */
+export const STATUS_ROWS: Record<string, Record<string, Inflicts>> = {
   Hiyuki: {
-    'Basic Attack - Present Self Stage 3 DMG': 1, 'Heavy Attack - Frost Splinter: Present Self DMG': 1, 'Foreclaiming: Inward Vision DMG': 4,
-    'Skill DMG': 1, 'Basic Attack - Foreclaimed Self Stage 3 DMG': 1, 'Basic Attack - Foreclaimed Self Stage 4 DMG': 1, 'Basic Attack - Foreclaimed Self Stage 5 DMG': 1,
-    'Mid-air Attack - Foreclaimed Self Stage 2 DMG': 1, 'Mid-air Plunging Attack - Foreclaimed Self DMG': 1, 'Heavy Attack - Bitterfrost: Foreclaimed Self DMG': 1,
+    ...each(['Basic Attack - Present Self Stage 3 DMG', 'Heavy Attack - Frost Splinter: Present Self DMG', 'Skill DMG', 'Basic Attack - Foreclaimed Self Stage 3 DMG',
+      'Basic Attack - Foreclaimed Self Stage 4 DMG', 'Basic Attack - Foreclaimed Self Stage 5 DMG', 'Mid-air Attack - Foreclaimed Self Stage 2 DMG',
+      'Mid-air Plunging Attack - Foreclaimed Self DMG', 'Heavy Attack - Bitterfrost: Foreclaimed Self DMG'], inf('Glacio Chafe', 1)),
+    'Foreclaiming: Inward Vision DMG': inf('Glacio Chafe', 4),
   },
-  Lucilla: { 'Clip It DMG': 1, 'Clip It: Hard Cut DMG': 1 },
-  Suisui: { 'Awakening Spring DMG': 1, 'Skill DMG': 1, 'Basic Attack - Drizzle Stance Stage 4 DMG': 1 },
+  Lucilla: each(['Clip It DMG', 'Clip It: Hard Cut DMG'], inf('Glacio Chafe', 1)),
+  Suisui: each(['Awakening Spring DMG', 'Skill DMG', 'Basic Attack - Drizzle Stance Stage 4 DMG'], inf('Glacio Chafe', 1)),
+  Ciaccona: each(['Normal|Stage 4 DMG', 'Skill|Skill DMG', 'Intro|Skill DMG', 'Symphonic Poem: Tonic DMG', 'Quadruple Downbeat DMG'], inf('Aero Erosion', 1)),
+  Cartethyia: {
+    'Normal|Stage 4 DMG': inf('Aero Erosion', 1), 'Skill|Skill DMG': inf('Aero Erosion', 2), "Sword to Mark Tide's Trace DMG": inf('Aero Erosion', 2),
+    ...each(['Basic Attack Stage 5 DMG', 'Mid-air Attack 2 DMG', 'Enhanced Heavy Attack DMG', 'May Tempest Break the Tides DMG'], inf('Aero Erosion', 0, { fromSeq: [3, 2] })),
+  },
+  Hsin: {
+    ...each(['Resonance Skill - Illumining Form: Pillars Aligned DMG', 'Heavy Attack - Illumining Form: Stilling All Horizons DMG'], inf('Electro Flare', 5)),
+    ...each(['Intro Skill - Illumining Form DMG in Resonance Mode - Electro Flare', 'Intro Skill - Answering Form DMG in Resonance Mode - Electro Flare',
+      'Heavy Attack - Answering Form: Realm Protector DMG'], inf('Electro Flare', 1)),
+  },
+  'Rover: Electro': { 'Overshock DMG': inf('Electro Flare', 10), 'Liberation|Skill DMG': inf('Electro Flare', 0, { fromSeq: [2, 5] }) },
+  Denia: {
+    ...each(["It's Been A While! DMG", 'Knock Knock DMG', 'Final Act - Stagecraft Form DMG', 'Final Act - Breakdown Form DMG', 'Erosion Field DMG per tick'],
+      inf('Fusion Burst', 2, { mode: ['c.den.mode', 0] })),
+    ...each(['Basic Attack - Stagecraft Form Stage 3 DMG', 'Basic Attack - Stagecraft Form Stage 4 DMG', 'Basic Attack - Breakdown Form Stage 3 DMG', 'Basic Attack - Breakdown Form Stage 4 DMG',
+      'Mid-air Attack - Breakdown Form Stage 3 DMG', 'Mid-air Attack - Breakdown Form Stage 4 DMG'], inf('Fusion Burst', 1, { mode: ['c.den.mode', 0] })),
+  },
+  Phoebe: each(['Absolution Litany DMG', 'Utter Confession DMG'], inf('Spectro Frazzle', 1)),
 };
 
 export type TimingKind = 'basic' | 'heavy' | 'skill' | 'liberation' | 'echo' | 'intro' | 'outro' | 'forte' | 'dodge' | 'air';
@@ -91,7 +128,10 @@ export interface Machine {
   gauges?: (s: MachineState) => { label: string; value: number; max: number }[];
 }
 
-const STAGE = /^(.*?) Stage (\d+)(?: DMG)?$/;
+// "Basic Attack - Present Self Stage 3 DMG" or a bare "Stage 3 DMG" (many kits' plain Basic Attack)
+const STAGE = /^(?:(.*?) )?Stage (\d+)(?: DMG)?$/;
+// "Basic Attack 2 DMG", "Moonring - Basic Attack 2 DMG"
+const NUMBERED = /^(.*\bBasic Attack) (\d+)(?: DMG)?$/;
 const TYPED = /^(Basic Attack|Heavy Attack|Mid-air|Plunging|Dodge|Resonance Skill|Resonance Liberation|Intro Skill|Outro Skill|Echo Skill)\b/;
 const PREFIX: Record<SkillKind, string> = {
   Normal: 'Normal Attack', Skill: 'Resonance Skill', Liberation: 'Resonance Liberation', Forte: 'Forte Circuit', Intro: 'Intro Skill', Outro: 'Outro Skill',
@@ -124,11 +164,12 @@ function mk(c: Character, kind: SkillKind, rows: RowRef[], timing: TimingKind, e
 function families(c: Character, kind: SkillKind) {
   const out = new Map<string, string[]>();
   for (const label of rowsOf(c, kind)) {
-    const m = label.match(STAGE);
+    const m = label.match(STAGE) ?? label.match(NUMBERED);
     if (!m) continue;
-    const list = out.get(m[1]) ?? [];
+    const key = m[1] ?? '';
+    const list = out.get(key) ?? [];
     list[Number(m[2]) - 1] = label;
-    out.set(m[1], list);
+    out.set(key, list);
   }
   return out;
 }
@@ -169,7 +210,8 @@ const BASE_BUTTONS: Button[] = [
 /** Works for every Resonator: Basic cycles the first combo, the others use their skill's first move. */
 export function genericMachine(c: Character): Machine {
   const fam = families(c, 'Normal');
-  const basic = [...fam.entries()].find(([k]) => /^Basic Attack/.test(k)) ?? [...fam.entries()][0];
+  const entries = [...fam.entries()];
+  const basic = entries.find(([k]) => /^Basic Attack/.test(k)) ?? entries.find(([k]) => k === '') ?? entries[0];
   const first = (kind: SkillKind, re?: RegExp) => rowsOf(c, kind).find((l) => !re || re.test(l));
   const heavy = first('Normal', /^Heavy Attack/);
   const skill = first('Skill');

@@ -27,5 +27,4 @@ field (OCR regions, the name/stat fallbacks, icon matching by head + full pictur
 + full-icon distance). Fix the reader, not the expected file, unless the expected file was wrong. All cards
 must stay green.
 
-If the character is new, model their kit too (effects in `src/engine/effects/characters.ts`, mark it in
-`UNVERIFIED` until checked against in-game numbers).
+If the character has no kit yet (`npm run kit` shows 0), model them with the `model-character` skill.

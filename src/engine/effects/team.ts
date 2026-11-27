@@ -1,5 +1,5 @@
 import type { Effect } from '../types';
-import { DEN_STRAIN, HSIN_FLARE, HSIN_UNI, LUC_CHAFE, LUC_ECHO, SUO_ALIGNED } from './characters';
+import { DEN_BURST, DEN_STRAIN, HSIN_FLARE, HSIN_UNI, LUC_CHAFE, LUC_ECHO, SUO_ALIGNED } from './characters';
 import { rankScale } from './weapons';
 
 /**
@@ -26,6 +26,10 @@ export const TEAM_KITS: Record<string, TeamEffect[]> = {
       raisesMax: { key: 'c.carte.imprint', by: 3, exclusive: 'negativeStatusMax' } },
   ],
   Qingxiao: [],
+  Ciaccona: [
+    { seq: 0, id: 'outro', group: 'team', source: 'Outro · Windcalling Tune', text: 'Aero Erosion DMG Amplified (30s)',
+      condition: { kind: 'toggle', label: 'Ciaccona Outro', default: true }, mods: [{ key: 'amplify', value: 100 }], appliesTo: { statuses: ['Aero Erosion'] } },
+  ],
   Lucilla: [
     { seq: 0, id: 'inherent', group: 'team', mode: LUC_CHAFE, source: 'Inherent · Slow Motion', text: 'After Spotlight: Glacio RES of nearby targets reduced',
       condition: { kind: 'toggle', label: 'After Lucilla\'s Spotlight', default: true }, mods: [{ key: 'resShred', value: 8 }], appliesTo: { element: 'Glacio' } },
@@ -88,6 +92,8 @@ export const TEAM_KITS: Record<string, TeamEffect[]> = {
       condition: { kind: 'toggle', label: 'Inflicts Fusion Burst / Tune Rupture - Shifting', default: true }, mods: [{ key: 'amplify', value: 10 }] },
   ],
   Denia: [
+    { seq: 0, id: 'outro.burst', group: 'team', mode: DEN_BURST, source: 'Outro · Unfinished Lies', text: 'Fusion Burst DMG Amplified (30s)',
+      condition: { kind: 'toggle', label: 'Denia Outro (Fusion Burst mode)', default: true }, mods: [{ key: 'amplify', value: 60 }], appliesTo: { statuses: ['Fusion Burst'] } },
     { seq: 0, id: 'outro', group: 'team', mode: DEN_STRAIN, source: 'Outro · Unfinished Lies', text: 'Incoming Resonator: all DMG Amplified',
       condition: { kind: 'toggle', label: 'Denia Outro (Tune Strain mode)', default: true }, mods: [{ key: 'amplify', value: 15 }] },
     { seq: 0, id: 'outro.strain', group: 'team', mode: DEN_STRAIN, source: 'Outro · Unfinished Lies', text: 'After inflicting Tune Strain - Shifting: Amplify raised to 40%',
@@ -131,10 +137,7 @@ export const TEAM_KITS: Record<string, TeamEffect[]> = {
 
 /** Parts of a teammate's kit that are known but not modelled (shown in the Team tab). */
 export const TEAM_NOT_MODELLED: Record<string, string[]> = {
-  Lucilla: ['Outro / S2: Glacio Chafe DMG Amplify (Glacio Chafe DMG not modelled)'],
-  Ciaccona: ['Outro: Aero Erosion DMG Amplify (Aero Erosion DMG not modelled)'],
   Suoming: ['Unison Boon (only for Resonators that can trigger Unison Response)'],
-  Qingxiao: ['Outro: 800% ATK Aero hit (her own damage)'],
 };
 
 // ---------------------------------------------------------------- teammate gear

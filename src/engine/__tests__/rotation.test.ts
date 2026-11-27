@@ -5,6 +5,7 @@ import { uniformRes } from '../enemy';
 import { genericMachine, machineFor, moveName } from '../rotation/actions';
 import { moveResources, simulate, type RotationStep } from '../rotation/sim';
 import { DEFAULT_TIMES, FROZEN_LIBERATION_TIME } from '../rotation/timing';
+import { SNOW_RUST_BITE } from '../rotation/status';
 import type { Build, Teammate } from '../types';
 
 const char = (name: string) => data.characters.find((c) => c.name === name)!;
@@ -367,8 +368,12 @@ describe('rotation simulation', () => {
     expect(r.moves.filter((m) => m.char !== char(H).id).every((m) => !m.chafe?.bites)).toBe(true);
     // at S0 (Snow Rust 2 needs two inflicting Resonators) the multiplier is 102% instead of 590%
     const s0 = simulate({ steps }, team(), data).moves.find((m) => m.char === char(H).id && m.move.kind === 'Intro')!;
-    const bite = (m: typeof intro) => m.hits.find((h) => /Glacio Bite/.test(h.row.row))!.value;
+    const bite = (m: typeof intro) => m.hits.find((h) => h.row.row === SNOW_RUST_BITE)!.value;
     expect(bite(intro) / bite(s0)).toBeGreaterThan(5);
+    // with Hiyuki in the team every new stack is a Glacio Bite hit at the multiplier of the stack limit (10: 203.77%)
+    const own = intro.hits.filter((h) => h.row.row === 'Glacio Bite DMG');
+    expect(own).toHaveLength(intro.chafe!.inflicted);
+    expect(own.every((h) => h.status === 'Glacio Bite')).toBe(true);
   });
 
   it('weapons that restore Concerto on a Skill or Liberation count (Variation R5: +16 per Resonance Skill)', () => {

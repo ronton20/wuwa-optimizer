@@ -25,6 +25,8 @@ export const DATA_PATHS = [
   'BinData/weapon/weaponreson.json',
   'BinData/phantom/*',
   'BinData/damage/damage.json',
+  'BinData/AbnormalDamage/abnormaldamageconfig.json',
+  'BinData/buff/buff.json',
   'Textmaps/en/role/*',
   'Textmaps/en/skill/*',
   'Textmaps/en/skillTree/*',

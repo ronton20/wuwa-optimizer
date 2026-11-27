@@ -1,10 +1,11 @@
-import type { Character, GameData, Skill, SkillKind } from '../../data/types';
+import type { Character, GameData, NegativeStatus, Skill, SkillKind } from '../../data/types';
 import { computeDamage, ECHO_ROW, echoSkill, matches, type HitContext } from '../damage';
 import { collectEffects, inMode, resolveEffects } from '../effects';
 import type { ActiveEffect, Build, Effect } from '../types';
 import { machineFor, skillOfRow, type GameEvent, type Machine, type MachineState, type Move, type RowRef } from './actions';
-import { BITE_ROW, chafeTracker, type ChafeInfo } from './chafe';
-import { characterOf, DEFAULT_TIMES, FROZEN_LIBERATION_TIME, timedRule, weaponConcerto, type TimedRule } from './timing';
+import { statusDamage, statusRow } from '../negative';
+import { SNOW_RUST_BITE, statusTracker, type ChafeInfo, type StatusHit } from './status';
+import { actionTime, characterOf, timedRule, weaponConcerto, type TimedRule } from './timing';
 
 /** One press in the rotation. Switching to another Resonator happens before their first press. */
 export interface RotationStep {
@@ -34,7 +35,8 @@ export interface Rotation {
   emptyEnergy?: boolean;
 }
 
-export interface SimHit { row: RowRef; value: number }
+/** `status`: a Negative Status hit, counted for the Resonator who applied it (`by`) */
+export interface SimHit { row: RowRef; value: number; status?: NegativeStatus; by?: number }
 
 /** One performed move (a press, or the Outro / Intro of a switch). */
 export interface SimMove {
@@ -216,8 +218,25 @@ export function simulate(rotation: Pick<Rotation, 'steps' | 'freezeLiberation' |
   const conc = (id: number) => concerto.get(id) ?? (rotation.fullConcerto ? 100 : 0);
   const ener = (id: number) => energy.get(id) ?? (rotation.emptyEnergy ? 0 : maxE(id));
 
-  const chafe = chafeTracker(Object.keys(builds).map(Number), builds, data);
-  const hiyukiId = data.characters.find((c) => c.name === 'Hiyuki')?.id;
+  const tracker = statusTracker(Object.keys(builds).map(Number), builds, data);
+  // Negative Status hits: the applier's build and the buffs up for them at that time
+  const statusCache = new Map<string, number>();
+  const statusValue = (h: StatusHit, at: number) => {
+    const b = builds[h.by];
+    if (!b) return 0;
+    const r = rulesFor(b);
+    const up = new Set([...r].filter(([, x]) => isUp(x.rule, x.owner, h.by, at)).map(([id]) => id));
+    const key = `${h.by}|${h.status}|${h.pct}|${h.amplify}|${[...up].sort().join(',')}`;
+    if (!statusCache.has(key)) {
+      statusCache.set(key, statusDamage(b, data, h.status, h.pct, { amplify: h.amplify, level: (a) => (r.has(a.effect.id) ? (up.has(a.effect.id) ? a.level : 0) : undefined) }));
+    }
+    return statusCache.get(key)!;
+  };
+  const statusHits = (list: StatusHit[], at: number): SimHit[] => list.map((h) => {
+    const value = statusValue(h, at);
+    byChar[h.by] = (byChar[h.by] ?? 0) + value;
+    return { row: { skillKind: 'Forte', row: h.snowRust ? SNOW_RUST_BITE : statusRow(h.status) }, value, status: h.status, by: h.by };
+  });
   const weaponCd = new Map<string, number>();
   const moves: SimMove[] = [];
   const snapshots: Map<number, MachineState>[] = [];
@@ -264,19 +283,17 @@ export function simulate(rotation: Pick<Rotation, 'steps' | 'freezeLiberation' |
     concerto.set(char, move.kind === 'Outro' ? 0 : Math.min(100, conc(char) + res.concerto + fromWeapon));
     const own = hits.reduce((s, h) => s + h.value, 0);
     byChar[char] = (byChar[char] ?? 0) + own;
-    // Glacio Chafe on the target; Hiyuki's extra Glacio Bite counts as her damage
-    const ch = chafe({ t, char, onField: char, move, events });
-    if (ch?.bite) {
-      hits.push({ row: { skillKind: 'Forte', row: BITE_ROW }, value: ch.bite });
-      if (hiyukiId !== undefined) byChar[hiyukiId] = (byChar[hiyukiId] ?? 0) + ch.bite;
-    }
-    const damage = own + (ch?.bite ?? 0);
-    moves.push({ step, char, move, via, t, seconds, damage, hits, buffs: [...new Set(buffs)], always, concerto: conc(char), energy: e, maxEnergy: maxE(char), warn, ...(ch ? { chafe: ch.info } : {}) });
+    // Negative Statuses on the target: ticks due by now, and what this move inflicts (counted for whoever applied them)
+    const st = tracker.step({ t, char, onField: char, move, events });
+    const sh = statusHits(st.hits, t);
+    hits.push(...sh);
+    const damage = own + sh.reduce((s, h) => s + h.value, 0);
+    moves.push({ step, char, move, via, t, seconds, damage, hits, buffs: [...new Set(buffs)], always, concerto: conc(char), energy: e, maxEnergy: maxE(char), warn, ...(st.info ? { chafe: st.info } : {}) });
     for (const ev of move.events) if (ev !== 'outro') events.push({ char, event: ev, t, tags: move.tags });
     t += seconds;
   };
-  const timeOf = (move: Move, override?: number) =>
-    override ?? move.seconds ?? (move.timing === 'liberation' && rotation.freezeLiberation ? FROZEN_LIBERATION_TIME : DEFAULT_TIMES[move.timing]);
+  const timeOf = (char: number, move: Move, override?: number) =>
+    override ?? actionTime(characterOf(data, char)!.name, move, rotation.freezeLiberation).seconds;
 
   rotation.steps.forEach((s, i) => {
     if (onField !== undefined && onField !== s.char) {
@@ -294,15 +311,19 @@ export function simulate(rotation: Pick<Rotation, 'steps' | 'freezeLiberation' |
         perform(i, out, o.move, 'swap', 0, warn);
         const intro = machine(s.char).press(state(s.char), 'intro');
         states.set(s.char, intro.state);
-        perform(i, s.char, intro.move, 'swap', timeOf(intro.move));
+        perform(i, s.char, intro.move, 'swap', timeOf(s.char, intro.move));
       }
     }
     onField = s.char;
     const { move, state: next } = machine(s.char).press(state(s.char), s.button, s.option);
     states.set(s.char, next);
-    perform(i, s.char, move, 'press', timeOf(move, s.seconds));
+    perform(i, s.char, move, 'press', timeOf(s.char, move, s.seconds));
     snapshots.push(new Map(states));
   });
+  // ticks that land before the rotation ends
+  const tail = statusHits(tracker.advance(t), t);
+  const lastMove = moves.at(-1);
+  if (tail.length && lastMove) { lastMove.hits.push(...tail); lastMove.damage += tail.reduce((s, h) => s + h.value, 0); }
 
   // buff lanes: when each timed buff was up (one per buff; the same buff seen from several builds shares it)
   const lanes = new Map<string, BuffLane>();

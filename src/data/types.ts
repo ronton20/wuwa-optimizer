@@ -41,6 +41,10 @@ export interface SkillRow {
   values: string[];
   /** Present when the row is a damage row. */
   hits?: HitTerm[];
+  /** not a Skill Detail row: a hit the kit text states as a number (scripts/data/textHits.ts) */
+  fromText?: true;
+  /** only exists from this sequence on (a sequence's own hit) */
+  seq?: number;
 }
 
 /** 'Echo': the main echo's skill, added to a build's moves (not a Resonator skill) */
@@ -114,6 +118,25 @@ export interface EchoStatTables {
   subRolls: Partial<Record<StatKey, number[]>>;
 }
 
+export type NegativeStatus = 'Glacio Chafe' | 'Glacio Bite' | 'Aero Erosion' | 'Spectro Frazzle' | 'Electro Flare' | 'Fusion Burst' | 'Havoc Bane';
+
+/** A Negative Status as the game's base buff on the target defines it (buff.json 100X0000). */
+export interface StatusDef {
+  element: Element;
+  /** default stack limit */
+  maxStacks: number;
+  /** seconds it lasts; a new stack restarts it (Spectro Frazzle: per stack, see the sim) */
+  duration: number;
+  /** seconds between damage ticks; 0 = no periodic damage */
+  period: number;
+  /** one tick right when it's first inflicted */
+  tickOnApply: boolean;
+  /** DMG multiplier in % at 1..N stacks (index 0 = 1 stack); empty = it deals no damage */
+  dmg: number[];
+  /** Havoc Bane: target DEF change in % at 1..N stacks */
+  def?: number[];
+}
+
 export interface GameData {
   meta: { gameVersion: string; dataCommit: string; builtAt: string; source: string };
   characters: Character[];
@@ -121,4 +144,6 @@ export interface GameData {
   echoes: Echo[];
   sonatas: Sonata[];
   echoStats: EchoStatTables;
+  /** Negative Status damage: base by Resonator level (index = level) and each status's numbers */
+  negativeStatus: { levelBase: number[]; statuses: Record<NegativeStatus, StatusDef> };
 }

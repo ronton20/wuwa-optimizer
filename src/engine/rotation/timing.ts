@@ -1,6 +1,7 @@
 import type { Character, GameData } from '../../data/types';
 import type { Effect } from '../types';
-import type { GameEvent, TimingKind } from './actions';
+import type { GameEvent, Move, TimingKind } from './actions';
+import { RECORDED_TIMES } from './recordedTimes';
 
 /**
  * Default action times in seconds, by kind of action. Placeholders until clip / recording timings land;
@@ -12,6 +13,18 @@ export const DEFAULT_TIMES: Record<TimingKind, number> = {
 
 /** Tower of Adversity stops the clock during Resonance Liberation animations; this is what's left. */
 export const FROZEN_LIBERATION_TIME = 0.3;
+
+export type TimeSource = 'recorded' | 'estimate' | 'default' | 'frozen';
+
+/** How long a move takes when the step doesn't set its own time: recorded, then the machine's estimate, then the default. */
+export function actionTime(character: string, move: Pick<Move, 'label' | 'timing' | 'seconds'>, freezeLiberation = false): { seconds: number; source: TimeSource } {
+  if (move.timing === 'liberation' && freezeLiberation && move.seconds === undefined) return { seconds: FROZEN_LIBERATION_TIME, source: 'frozen' };
+  const r = RECORDED_TIMES[character];
+  const rec = r?.moves?.[move.label] ?? r?.kinds?.[move.timing];
+  if (rec !== undefined) return { seconds: rec, source: 'recorded' };
+  if (move.seconds !== undefined) return { seconds: move.seconds, source: 'estimate' };
+  return { seconds: DEFAULT_TIMES[move.timing], source: 'default' };
+}
 
 export interface TimedRule {
   /** events that start (or refresh) the buff ("After Intro or Liberation": either) */

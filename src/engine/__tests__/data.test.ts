@@ -56,3 +56,23 @@ describe('snapshot matches in-game screens', () => {
     expect(data.echoStats.fixed['1']).toEqual({ stat: 'hp', value: 2280 });
   });
 });
+
+describe('hits read from the kit text', () => {
+  const row = (name: string, label: string) => char(name).skills.flatMap((s) => s.rows).find((r) => r.label === label);
+
+  it('adds hits the text gives a multiplier for, with their sequence, type and count', () => {
+    const carlotta = row('Carlotta', 'S3 · Adelante, Cortado, Spinning in Grace DMG');
+    expect(carlotta).toMatchObject({ fromText: true, seq: 3 });
+    expect(carlotta!.hits![0]).toMatchObject({ count: 1, element: 'Glacio', scaling: 'atk', dmgType: 'Outro' });
+    expect(carlotta!.hits![0].pct.at(-1)).toBe(1032.18);
+    expect(row('Encore', 'Thermal Field DMG')!.hits![0].count).toBe(4); // every 1.5s for 6s
+    expect(row('Lucy', 'S2 · The Blackwall, the Past, the Escape DMG')!.hits![0].dmgType).toBe('Heavy'); // "considered Heavy Attack DMG"
+  });
+
+  it('never duplicates a hit the data already has as a row', () => {
+    for (const c of data.characters) {
+      const pcts = c.skills.flatMap((s) => s.rows.filter((r) => !r.fromText).flatMap((r) => (r.hits ?? []).map((h) => h.pct.at(-1))));
+      for (const r of c.skills.flatMap((s) => s.rows.filter((x) => x.fromText))) expect(pcts, `${c.name} · ${r.label}`).not.toContain(r.hits![0].pct.at(-1));
+    }
+  });
+});

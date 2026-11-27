@@ -4,8 +4,7 @@ import data from '../../data/current';
 import type { SkillKind } from '../../data/types';
 import { machineFor, skillOfRow, type MachineState, type Move } from '../../engine/rotation/actions';
 import { maxEnergyOf, simulate, type Rotation, type RotationStep, type SimMove, type SimResult } from '../../engine/rotation/sim';
-import { DEFAULT_TIMES, FROZEN_LIBERATION_TIME } from '../../engine/rotation/timing';
-import { BITE_ROW } from '../../engine/rotation/chafe';
+import { actionTime, DEFAULT_TIMES, FROZEN_LIBERATION_TIME } from '../../engine/rotation/timing';
 import type { Build } from '../../engine/types';
 import { teamBuild, useBuilds } from '../../state/buildStore';
 import { ui } from '../../strings/en';
@@ -157,7 +156,7 @@ export function RotationScreen({ teamId }: { teamId: string }) {
 function Summary({ result, members, rot, onSave }: { result: SimResult; members: number[]; rot: Rotation; onSave: (p: Partial<Rotation>) => void }) {
   const color = useContext(ColorCtx);
   const warnings = result.moves.filter((m) => m.warn.length).length;
-  const bite = result.moves.flatMap((m) => m.hits).filter((h) => h.row.row === BITE_ROW).reduce((a, h) => a + h.value, 0);
+  const negative = result.moves.flatMap((m) => m.hits).filter((h) => h.status).reduce((a, h) => a + h.value, 0);
   return (
     <div className="glass grid gap-4 rounded-2xl p-5 lg:grid-cols-[auto_1fr_auto] lg:items-center">
       <div className="flex gap-8">
@@ -168,7 +167,7 @@ function Summary({ result, members, rot, onSave }: { result: SimResult; members:
         <div className="space-y-1 text-sm">
           <div><span className="text-muted">Damage </span><span className="tabular">{fmt(result.total)}</span></div>
           <div><span className="text-muted">Time </span><span className="tabular">{secs(result.time)}</span></div>
-          {bite > 0 && <div className="text-xs text-muted" title="Hiyuki's Snow Rust Glacio Bite hits, from the community-measured Negative Status formula">incl. Glacio Bite ~<span className="tabular">{fmt(bite)}</span> (estimate)</div>}
+          {negative > 0 && <div className="text-xs text-muted" title={ui.negativeHint}>{ui.negativeIncl} ~<span className="tabular">{fmt(negative)}</span> {ui.estimate}</div>}
           {warnings > 0 && <div className="text-xs text-fusion">{warnings} move{warnings > 1 ? 's' : ''} with a warning</div>}
         </div>
       </div>
@@ -328,7 +327,7 @@ function StepDetail({ i, step, moves, freeze, swap, onPatch, onRemove, onShift, 
 }) {
   const color = useContext(ColorCtx);
   const press = moves.find((m) => m.via === 'press');
-  const deflt = press ? (press.move.timing === 'liberation' && freeze ? FROZEN_LIBERATION_TIME : DEFAULT_TIMES[press.move.timing]) : 0;
+  const deflt = press ? actionTime(char(press.char).name, press.move, freeze) : undefined;
   const warns = moves.flatMap((m) => m.warn);
   return (
     <div className="glass mt-2 rounded-2xl p-4" style={{ '--accent': color(step.char) } as CSSProperties}>
@@ -354,7 +353,7 @@ function StepDetail({ i, step, moves, freeze, swap, onPatch, onRemove, onShift, 
               </div>
               {m.hits.length > 1 && m.hits.map((h, j) => (
                 <div key={j} className="flex justify-between gap-3 pl-3 text-xs text-muted">
-                  <span>{h.row.row.replace(/ DMG$/, '')}</span><span className="tabular">{fmt(h.value)}</span>
+                  <span>{h.row.row.replace(/ DMG$/, '')}{h.by !== undefined && h.by !== m.char && <> ({char(h.by).name})</>}</span><span className="tabular">{fmt(h.value)}</span>
                 </div>
               ))}
               {m.move.rows.length === 0 && m.move.kind !== 'Outro' && <div className="pl-3 text-xs text-muted">No damage of its own.</div>}
@@ -384,11 +383,11 @@ function StepDetail({ i, step, moves, freeze, swap, onPatch, onRemove, onShift, 
             </div>
           )}
           <label className="flex items-center gap-2">
-            <span className="text-muted">Time</span>
-            <input type="number" min={0} step={0.1} value={step.seconds ?? ''} placeholder={deflt.toFixed(1)}
+            <span className="text-muted">{ui.time}</span>
+            <input type="number" min={0} step={0.1} value={step.seconds ?? ''} placeholder={(deflt?.seconds ?? 0).toFixed(1)}
               onChange={(e) => onPatch({ seconds: e.target.value === '' ? undefined : Math.max(0, Number(e.target.value)) })}
               className="w-20 rounded-lg border border-white/15 bg-night-900 px-2 py-1 tabular" />
-            <span className="text-xs text-muted">s {step.seconds === undefined ? '(default)' : ''}</span>
+            <span className="text-xs text-muted">s {step.seconds === undefined && deflt ? ui.timeSource[deflt.source] : ''}</span>
           </label>
           {press?.move.choice && (
             <div className="flex flex-wrap items-center gap-2">

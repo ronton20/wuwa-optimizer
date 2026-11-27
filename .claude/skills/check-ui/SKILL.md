@@ -14,9 +14,25 @@ Tests don't show layout bugs. After a UI change, look at the actual page.
 
 Icons come from `public/img/` (gitignored); run `npm run data:images` once if they're missing.
 
-## Screenshot with Playwright
+## Playwright MCP (preferred)
 
-Install once: `npm i -D playwright` (or use it via `npx`) and `npx playwright install chromium`.
+The project has the Playwright MCP server configured (`@playwright/mcp`). When its tools are loaded
+(`browser_navigate`, `browser_evaluate`, `browser_snapshot`, `browser_take_screenshot`, `browser_click`,
+`browser_console_messages`; use ToolSearch "playwright" if they're deferred):
+1. `browser_navigate` to the page, then `browser_evaluate` to seed `localStorage['wuwa-optimizer:builds:v1']` with
+   the state below and navigate again (a reload, so the app reads it).
+2. `browser_snapshot` to read the page, `browser_click` to open tabs / steps, `browser_take_screenshot` to look.
+3. `browser_console_messages` for errors.
+
+If the MCP tools aren't in the session (background jobs may not load them), use the script below.
+
+## Screenshot with a Playwright script
+
+Playwright is not a project dependency. In a scratch folder (`$CLAUDE_JOB_DIR/tmp` in a background job):
+`npm init -y && npm i playwright && npx playwright install chromium` (the browser download is shared, once per
+machine), then `node shot.mjs` there. Rotations can be seeded too: add
+`rotations: [{ id: 'r1', name: 'Check', teamId: 'team1', steps: [{ char: 1109, button: 'liberation' }], freezeLiberation: true }]`
+to the state; steps in the strip are buttons with the move label as `aria-label`.
 
 Seed the saved state **before the app loads** (an init script), otherwise the app's own persist writes over it:
 

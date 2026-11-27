@@ -1,4 +1,4 @@
-import type { Character, DmgType, Element, GameData, HitTerm, Skill, SkillKind, SkillRow, StatKey } from '../data/types';
+import type { Character, DmgType, Element, GameData, HitTerm, NegativeStatus, Skill, SkillKind, SkillRow, StatKey } from '../data/types';
 import { DEFAULT_ENEMY, defMultiplier, resMultiplier } from './enemy';
 import { collectEffects, modValue, resolveEffects } from './effects';
 import { computeStats, type ContributionGroup, type Stats } from './stats';
@@ -11,10 +11,14 @@ const ELEMENT_BONUS: Record<Element, StatKey> = {
   Glacio: 'dmgGlacio', Fusion: 'dmgFusion', Electro: 'dmgElectro', Aero: 'dmgAero', Spectro: 'dmgSpectro', Havoc: 'dmgHavoc', Physical: 'dmgPhysical',
 };
 
-export interface HitContext { skillKind: SkillKind; row: string; element: Element; dmgType: DmgType }
+export interface HitContext { skillKind: SkillKind; row: string; element: Element; dmgType: DmgType; status?: NegativeStatus }
+
+/** Glacio Bite is also Glacio Chafe (its DMG counts as Glacio Chafe DMG). */
+const statusAlso = (s: NegativeStatus): NegativeStatus[] => (s === 'Glacio Bite' ? ['Glacio Bite', 'Glacio Chafe'] : [s]);
 
 export function matches(f: HitFilter | undefined, h: HitContext): boolean {
   if (!f) return true;
+  if (f.statuses && !(h.status && statusAlso(h.status).some((s) => f.statuses!.includes(s)))) return false;
   if (f.element && f.element !== h.element) return false;
   if (f.dmgTypes && !f.dmgTypes.includes(h.dmgType)) return false;
   if (f.skillKinds && !f.skillKinds.includes(h.skillKind)) return false;
@@ -125,6 +129,7 @@ export function computeDamage(build: Build, data: GameData, opts: DamageOptions 
     const level = Math.min(build.skillLevels[skill.kind] ?? 10, 10);
     for (const row of skill.rows) {
       if (opts.only && row.label !== opts.only.row) continue;
+      if (row.seq && build.sequence < row.seq) continue;
       row.hits?.forEach((term, termIndex) => {
         const h: HitContext = { skillKind: skill.kind, row: row.label, element: term.element, dmgType: term.dmgType };
         const value = hitValue(full, effects, term, level, h, enemy, new Set());
