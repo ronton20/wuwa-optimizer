@@ -70,6 +70,8 @@ export const ui = {
   rename: 'Rename',
   delete: 'Delete',
   noSaved: 'No saved builds yet. Save one to keep a variant or compare.',
+  savedDpsHint: (live: string) => `Rotation DPS of each saved build in this Resonator's team rotation, vs your current build (${live}).`,
+  dps: 'DPS',
   pinHint: (max: number) => `Pin up to ${max} saved builds to compare with your current one. The first pinned is the baseline for the +/− %.`,
   sharedTitle: 'Shared build',
   sharedText: 'You are looking at a copy from a link. Edits stay here until you keep it.',

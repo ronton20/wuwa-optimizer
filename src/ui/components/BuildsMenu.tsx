@@ -1,6 +1,7 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import { MAX_PINNED, useBuild, useBuilds, useSavedFor } from '../../state/buildStore';
+import { rotationDps, rotationFor } from '../../state/rotationDps';
 import { shareUrl } from '../../state/share';
 import { ui } from '../../strings/en';
 
@@ -8,12 +9,21 @@ import { ui } from '../../strings/en';
 export function BuildsMenu({ characterId }: { characterId: number }) {
   const build = useBuild(characterId);
   const saved = useSavedFor(characterId);
-  const { saveAs, loadSaved, togglePin, renameSaved, deleteSaved, pinned } = useBuilds();
+  const { saveAs, loadSaved, togglePin, renameSaved, deleteSaved, pinned, teams, mainTeam, rotations, builds } = useBuilds();
   const [open, setOpen] = useState(false);
   const [name, setName] = useState('');
   const [editing, setEditing] = useState<string | null>(null);
   const box = useRef<HTMLDivElement>(null);
   const pinnedHere = pinned.filter((p) => saved.some((s) => s.id === p));
+  // each saved build in this Resonator's team rotation, next to the current build (only while the menu is open)
+  const dps = useMemo(() => {
+    const found = open ? rotationFor(characterId, { teams, mainTeam, rotations }) : undefined;
+    if (!found) return undefined;
+    return {
+      live: rotationDps(found.team, found.rotation, builds).dps,
+      of: Object.fromEntries(saved.map((s) => [s.id, rotationDps(found.team, found.rotation, builds, s.build).dps])),
+    };
+  }, [open, characterId, teams, mainTeam, rotations, builds, saved]);
 
   useEffect(() => {
     if (!open) return;
@@ -50,6 +60,7 @@ export function BuildsMenu({ characterId }: { characterId: number }) {
             {saved.length === 0 ? <p className="text-xs text-muted">{ui.noSaved}</p> : (
               <>
                 <p className="mb-2 text-[11px] text-muted">{ui.pinHint(MAX_PINNED)}</p>
+                {dps && <p className="mb-2 text-[11px] text-muted">{ui.savedDpsHint(Math.round(dps.live).toLocaleString())}</p>}
                 <ul className="max-h-[50vh] space-y-2 overflow-y-auto pr-1 scroll-thin">
                   {saved.map((s) => {
                     const pin = pinned.indexOf(s.id);
@@ -67,6 +78,7 @@ export function BuildsMenu({ characterId }: { characterId: number }) {
                           )}
                           <span className="shrink-0 text-[10px] text-muted">S{s.build.sequence} · {new Date(s.savedAt).toLocaleDateString()}</span>
                         </div>
+                        {dps && <SavedDps dps={dps.of[s.id]} live={dps.live} />}
                         <div className="flex flex-wrap gap-1.5">
                           <button className={btn} onClick={() => loadSaved(s.id, 'all')}>{ui.load}</button>
                           <button className={btn} onClick={() => loadSaved(s.id, 'echoes')}>{ui.echoesOnly}</button>
@@ -84,6 +96,20 @@ export function BuildsMenu({ characterId }: { characterId: number }) {
           </motion.div>
         )}
       </AnimatePresence>
+    </div>
+  );
+}
+
+/** A saved build's rotation DPS and how it compares with the current build. */
+function SavedDps({ dps, live }: { dps: number; live: number }) {
+  const d = live ? (dps / live - 1) * 100 : 0;
+  return (
+    <div className="mb-1.5 flex items-baseline gap-2 text-xs">
+      <span className="tabular text-gold-soft">{Math.round(dps).toLocaleString()}</span>
+      <span className="text-[10px] text-muted">{ui.dps}</span>
+      <span className={`tabular text-[11px] ${Math.abs(d) < 0.05 ? 'text-muted' : d > 0 ? 'text-aero' : 'text-[#ff6b8b]'}`}>
+        {Math.abs(d) < 0.05 ? '±0%' : `${d > 0 ? '+' : '−'}${Math.abs(d).toFixed(1)}%`}
+      </span>
     </div>
   );
 }
