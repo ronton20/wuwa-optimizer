@@ -3,9 +3,10 @@ import data from '../../data/current';
 import { defaultBuild } from '../../state/buildStore';
 import { uniformRes } from '../enemy';
 import { FROSTHEART_SKILL, genericMachine, machineFor, moveName } from '../rotation/actions';
-import { moveResources, simulate, type RotationStep } from '../rotation/sim';
+import { maxEnergyOf, moveResources, simulate, type RotationStep } from '../rotation/sim';
 import { DEFAULT_TIMES, FROZEN_LIBERATION_TIME } from '../rotation/timing';
 import { SNOW_RUST_BITE } from '../rotation/status';
+import { RECORDED_TIMES } from '../rotation/recordedTimes';
 import type { Build, Teammate } from '../types';
 
 const char = (name: string) => data.characters.find((c) => c.name === name)!;
@@ -40,7 +41,7 @@ describe('rotation machines', () => {
 
   it('every Resonator has the same five buttons', () => {
     for (const c of data.characters) expect(machineFor(c.id, data).buttons.slice(0, 5).map((b) => b.id), c.name).toEqual(['basic', 'heavy', 'skill', 'liberation', 'echo']);
-    expect(machineFor(char(H).id, data).buttons.map((b) => b.id)).toEqual(['basic', 'heavy', 'skill', 'liberation', 'echo', 'iai']);
+    expect(machineFor(char(H).id, data).buttons.map((b) => b.id)).toEqual(['basic', 'heavy', 'skill', 'liberation', 'echo', 'stance']);
     expect(machineFor(char(S).id, data).buttons.map((b) => b.id)).toEqual(['basic', 'heavy', 'skill', 'liberation', 'echo']);
   });
 
@@ -63,7 +64,7 @@ describe('rotation machines', () => {
     expect(go('heavy').rows[0].row).toBe('Heavy Attack - Foreclaimed Self DMG');
     expect(go('skill').label).toBe('Resonance Skill - Frostblight: Jade Cleave');
     const blade = go('liberation');
-    expect(blade.rows[0].bonus?.times).toBe(1);
+    expect(blade.rows[0].bonus?.times).toBe(2); // 1 from her inherent + 1 from Bitterfrost
     expect(go('basic').rows[0].row).toBe('Basic Attack - Present Self Stage 1 DMG');
   });
 
@@ -142,7 +143,7 @@ describe('rotation simulation', () => {
     const steps = press(H, 'heavy', 'liberation');
     const normal = simulate({ steps }, team(), data);
     const frozen = simulate({ steps, freezeLiberation: true }, team(), data);
-    expect(normal.time - frozen.time).toBeCloseTo(DEFAULT_TIMES.liberation - FROZEN_LIBERATION_TIME);
+    expect(normal.time - frozen.time).toBeCloseTo(RECORDED_TIMES.Hiyuki.moves!['Resonance Liberation - Foreclaiming: Inward Vision'] - FROZEN_LIBERATION_TIME);
     expect(frozen.total).toBeCloseTo(normal.total);
   });
 
@@ -208,8 +209,8 @@ describe('rotation simulation', () => {
     expect(res(25, H)).toMatchObject({ frostheart: 300, iai: 3, bitterfrost: 0 });
     expect(res(28, H)).toMatchObject({ frostheart: 0, iai: 0, bitterfrost: 3 });
     expect(label(29)).toBe('Heavy Attack - Bitterfrost: Foreclaimed Self');
-    expect(res(29, H)).toMatchObject({ bitterfrost: 0, blades: 1 });
-    expect(label(30)).toMatch(/Blade Liberation \(1 Snowforged Blade\)/);
+    expect(res(29, H)).toMatchObject({ bitterfrost: 0, blades: 2 }); // 1 from her inherent at the start + 1
+    expect(label(30)).toMatch(/Blade Liberation \(2 Snowforged Blades\)/);
     // no warnings on Hiyuki's or Lucilla's own moves
     expect(r.moves.filter((m) => m.via === 'press' && m.char !== char(S).id).flatMap((m) => m.warn)).toEqual([]);
     // Suisui's 600 Floral Epistle Outro unlocks her 400+ buff lane
@@ -252,8 +253,26 @@ describe('rotation simulation', () => {
     expect(go('basic')).toBe('Mid-air Attack - Foreclaimed Self Stage 1 DMG');
   });
 
-  it('Hiyuki at S2+ starts the fight with 3 Snowforged Blade (the first Blade Liberation is the big one)', () => {
-    expect(machineFor(char(H).id, data, 0).initial().res!.blades).toBe(0);
+  it('Hiyuki: Iai Stance (0 s) makes Basic the Iai strike while 100+ Frostheart is left; other moves end it', () => {
+    const m = machineFor(char(H).id, data, 0);
+    let s = m.press(m.initial(), 'liberation').state; // Inward Vision
+    expect(m.press(s, 'stance').move.warn).toMatch(/100 Frostheart \(has 0\)/);
+    s = { ...s, res: { ...s.res, frostheart: 250 } };
+    const stance = m.press(s, 'stance');
+    expect(stance.move).toMatchObject({ seconds: 0, rows: [], icon: 'E1' });
+    expect(stance.move.warn).toBeUndefined();
+    s = stance.state;
+    const go = (b: string) => { const r = m.press(s, b); s = r.state; return r.move; };
+    expect(go('basic')).toMatchObject({ label: 'Basic Attack - Iai', special: true, icon: 'A1' }); // 150 left
+    expect(go('basic').label).toBe('Basic Attack - Iai'); // 50 left: stance ends
+    expect(go('basic').label).toBe('Basic Attack - Foreclaimed Self Stage 1');
+    s = m.press({ ...s, res: { ...s.res, frostheart: 300 } }, 'stance').state;
+    go('skill');
+    expect(go('basic').label).not.toBe('Basic Attack - Iai');
+  });
+
+  it('Hiyuki starts the fight with 1 Snowforged Blade (inherent), 3 at S2+ (the first Blade Liberation is the big one)', () => {
+    expect(machineFor(char(H).id, data, 0).initial().res!.blades).toBe(1);
     const m = machineFor(char(H).id, data, 6);
     let s = m.initial();
     expect(s.res!.blades).toBe(3);
@@ -455,5 +474,65 @@ describe('Chisa, Ciaccona and Cartethyia machines (the owner\'s ToA floor 1 pres
     expect(prayers.energy).toBe(0);
     expect(prayers.concerto - r.moves[r.moves.indexOf(prayers) - 1].concerto).toBeCloseTo(20);
     expect(r.moves.filter((m) => m.char === char('Cartethyia').id).flatMap((m) => m.warn)).toEqual([]);
+  });
+});
+
+describe('Qingxiao and Hsin machines (from the kit text)', () => {
+  const run = (name: string, buttons: string[], conditions: Record<string, number> = {}) => {
+    const id = char(name).id;
+    const r = simulate({ steps: buttons.map((button) => ({ char: id, button })), freezeLiberation: true }, { [id]: { ...defaultBuild(id), conditions } }, data);
+    const m = machineFor(id, data, 0, conditions);
+    return { r, labels: r.moves.filter((x) => x.via === 'press').map((x) => x.move.label), gauge: (i: number) => Object.fromEntries((m.gauges?.(r.states[i].get(id)!) ?? []).map((g) => [g.label, Math.round(g.value)])) };
+  };
+
+  it('Qingxiao: Stringblade fills Qin Heart (1, 4) and Sword Cadence (2, 3) from the data, doubled by Heaven’s Clarity; Heavy → Ephemeral Transcendence → Heaven’s Reckoning', () => {
+    const q = run('Qingxiao', ['intro', 'basic', 'basic', 'basic', 'basic', 'skill', 'basic', 'basic', 'basic', 'basic', 'heavy', 'basic', 'basic', 'basic', 'basic', 'heavy', 'liberation']);
+    expect(q.gauge(1)).toEqual({ 'Qin Heart': 39, 'Sword Cadence': 30 }); // Stage 1: 19.48 × 2; Intro +30 Sword Cadence
+    expect(q.labels[5]).toBe('Resonance Skill - Severing Note: Judgement');
+    expect(q.labels[6]).toBe('Basic Attack - Stringblade Stage 4'); // Judgement chains into Stage 4
+    expect(q.labels[10]).toBe('Heavy Attack - Stringblade');
+    expect(q.gauge(14)).toEqual({ 'Heart Sword Intent': 100 });
+    expect(q.labels[15]).toMatch(/Heaven's Reckoning/);
+    const hr = q.r.moves.find((m) => /Heaven's Reckoning/.test(m.move.label))!;
+    expect(hr.move.levels).toEqual({ 'c.qing.hr': 1 }); // Heavy Attack - Stringblade was cast with Heaven's Clarity
+    expect(q.r.moves.filter((m) => m.via === 'press').flatMap((m) => m.warn)).toEqual([]);
+    expect(q.r.moves.at(-1)!.concerto).toBe(100);
+  });
+
+  it('Qingxiao: Severing Note during Stage 2 is Ascendant; a Heavy without full gauges warns', () => {
+    expect(run('Qingxiao', ['basic', 'basic', 'skill']).labels[2]).toBe('Resonance Skill - Severing Note: Ascendant');
+    expect(run('Qingxiao', ['heavy']).r.moves[0].warn[0]).toMatch(/needs full Qin Heart and Sword Cadence/);
+  });
+
+  it('Hsin (Electro Flare): Realm Wanderer at 100 Answering Heart unlocks Formshift; the Heartlock collapse gives +150 Illumining Heart; Pillars Aligned → Dominion → Beholding → Pillars Across Heaven', () => {
+    const h = run('Hsin', ['intro', 'basic', 'skill', 'basic', 'basic', 'basic', 'heavy', 'liberation', 'basic', 'basic', 'skill', 'skill', 'skill', 'basic', 'basic', 'basic', 'basic', 'heavy', 'liberation']);
+    expect(h.labels[1]).toBe('Basic Attack - Answering Form Stage 4'); // Electro Flare Intro chains into Stage 4
+    expect(h.labels[6]).toBe('Heavy Attack - Answering Form: Realm Wanderer');
+    expect(h.labels[7]).toBe('Resonance Liberation - Formshift');
+    expect(h.gauge(9)).toEqual({ 'Illumining Heart': 30 + 30 + 150 });
+    expect(h.labels[12]).toBe('Resonance Skill - Illumining Form: Pillars Aligned');
+    expect(h.labels.slice(13, 17)).toEqual([1, 2, 3, 4].map((n) => `Basic Attack - Illumining Form: Pillars Aligned Stage ${n}`));
+    expect(h.labels[17]).toBe('Heavy Attack - Illumining Form: Beholding All Horizons');
+    expect(h.labels[18]).toBe('Resonance Liberation - Pillars Across Heaven');
+    expect(h.r.moves.filter((m) => m.via === 'press').flatMap((m) => m.warn).filter((w) => !/Energy/.test(w))).toEqual([]);
+  });
+
+  it('Hsin (Unison): her Intro chains into Stage 3 and uses the Unison row', () => {
+    const h = run('Hsin', ['intro', 'basic'], { 'c.hsin.mode': 1 });
+    expect(h.r.moves[0].move.rows[0].row).toBe('Intro Skill - Answering Form DMG in Resonance Mode - Unison');
+    expect(h.labels[1]).toBe('Basic Attack - Answering Form Stage 3');
+  });
+
+  it('Resonance Energy: "Resonance Energy Cost" rows count as costs, and a max of 0 holds nothing', () => {
+    expect(maxEnergyOf(char('Mornye'))).toBe(175);
+    expect(maxEnergyOf(char('Lynae'))).toBe(125);
+    expect(maxEnergyOf(char('Lucilla'))).toBe(0); // "Lucilla holds up to 0 Resonance Energy"
+    const r = simulate({ steps: [...press(L, 'basic', 'basic', 'skill')] }, team(), data);
+    expect(r.moves.every((m) => m.energy === 0)).toBe(true);
+  });
+
+  it('Hsin at S2 enters the fight with 100 Answering Heart', () => {
+    expect(machineFor(char('Hsin').id, data, 1).initial().res!.answer).toBe(0);
+    expect(machineFor(char('Hsin').id, data, 2).initial().res!.answer).toBe(100);
   });
 });

@@ -5,7 +5,8 @@ import { useBuild, useBuilds, useMyCharacters } from '../../state/buildStore';
 import { useDamage } from '../useDamage';
 import { ELEMENT_COLOR, img } from '../theme';
 import { ElementGlyph } from '../components/ElementGlyph';
-import { DamagePanel, DamageSheet, type CompareColumn } from './DamagePanel';
+import { DamagePanel, DamageSheet, type CompareColumn, type RotationSummary } from './DamagePanel';
+import { rotationDps, rotationFor } from '../../state/rotationDps';
 import { BuildsMenu, ShareButton, SharedBanner } from '../components/BuildsMenu';
 import { ImportCard } from '../import/ImportCard';
 import { computeDamage } from '../../engine';
@@ -27,7 +28,7 @@ export function BuildScreen({ characterId }: { characterId: number }) {
   const c = data.characters.find((x) => x.id === characterId)!;
   const build = useBuild(characterId);
   const result = useDamage(build);
-  const { select, undo, redo, reset, past, future, saved, pinned, shared } = useBuilds();
+  const { select, undo, redo, reset, past, future, saved, pinned, shared, teams, mainTeam, rotations, builds, showTeam } = useBuilds();
   // rail: characters you've built, plus the one open now
   const mine = useMyCharacters();
   const rail = [...new Set([...mine, characterId])].map((id) => data.characters.find((x) => x.id === id)!).filter(Boolean);
@@ -36,6 +37,18 @@ export function BuildScreen({ characterId }: { characterId: number }) {
     .map((id) => saved.find((s) => s.id === id))
     .filter((s): s is NonNullable<typeof s> => !!s && s.build.characterId === characterId)
     .map((s) => ({ id: s.id, name: s.name, hits: computeDamage(s.build, data).hits })), [pinned, saved, characterId]);
+  // rotation DPS: this build in its team's rotation, and the baseline saved build in its place
+  const rotation = useMemo<RotationSummary | undefined>(() => {
+    const found = rotationFor(characterId, { teams, mainTeam, rotations });
+    if (!found) return undefined;
+    const live = rotationDps(found.team, found.rotation, builds);
+    const baseSaved = pinned.map((id) => saved.find((s) => s.id === id)).find((s) => s?.build.characterId === characterId);
+    return {
+      team: found.team.name, rotation: found.rotation.name, dps: live.dps, share: live.total ? (live.byChar[characterId] ?? 0) / live.total : 0,
+      ...(baseSaved ? { base: { name: baseSaved.name, dps: rotationDps(found.team, found.rotation, builds, baseSaved.build).dps } } : {}),
+      onOpen: () => showTeam(found.team.id),
+    };
+  }, [characterId, teams, mainTeam, rotations, builds, pinned, saved, showTeam]);
   const [tab, setTab] = useState<Tab>('overview');
   const art = img(`charArt:${c.id}`) || img(`char:${c.id}`);
   const accent = ELEMENT_COLOR[c.element];
@@ -128,11 +141,11 @@ export function BuildScreen({ characterId }: { characterId: number }) {
           </div>
         </section>
 
-        <DamagePanel hits={result.hits} enemy={enemyOf(build)} compare={compare} />
+        <DamagePanel hits={result.hits} enemy={enemyOf(build)} compare={compare} rotation={rotation} />
       </div>
 
       {/* phones: damage sheet + bottom tab bar */}
-      <DamageSheet hits={result.hits} enemy={enemyOf(build)} compare={compare} />
+      <DamageSheet hits={result.hits} enemy={enemyOf(build)} compare={compare} rotation={rotation} />
       <nav role="tablist" aria-label="Build sections (mobile)"
         className="fixed inset-x-0 bottom-0 z-40 flex h-[calc(56px+env(safe-area-inset-bottom))] pb-[env(safe-area-inset-bottom)] gap-1 overflow-x-auto overflow-y-hidden border-t border-white/10 bg-night-900/95 px-2 backdrop-blur-md scroll-thin lg:hidden">
         {TABS.map((k) => (

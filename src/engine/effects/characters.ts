@@ -98,6 +98,12 @@ export const KITS: Record<string, KitEffect[]> = {
     { seq: 0, id: 'c.qing.mindlock.lib', group: 'self', source: 'Inherent · To Know, To Banish', text: 'Billows Beneath Heaven: 2% more DMG per Mindlock stack (+5% first 7)',
       condition: { kind: 'stacks', label: 'Mindlock stacks', max: 15, default: 'max', key: 'c.qing.mindlock' }, mods: [{ key: 'amplify', value: 0, byStacks: mindlockBonus }],
       appliesTo: { skillKinds: ['Liberation'] } },
+    { seq: 0, id: 'c.qing.et', group: 'self', source: 'Forte · Ephemeral Transcendence', text: 'Before Heaven’s Reckoning is ready: Ephemeral Transcendence Basic / Dodge Counter multipliers +100%',
+      condition: { kind: 'toggle', label: 'Heaven’s Reckoning not ready yet', default: true }, mods: [{ key: 'multBonus', value: 100 }],
+      appliesTo: { rows: /^(Basic Attack|Dodge Counter) - Ephemeral Transcendence/, label: 'Ephemeral Transcendence Basic Attack and Dodge Counter' } },
+    { seq: 0, id: 'c.qing.hr', group: 'self', source: 'Forte · Heaven’s Clarity', text: 'After Heavy Attack - Stringblade with Heaven’s Clarity: Heaven’s Reckoning multiplier +100%',
+      condition: { kind: 'toggle', label: 'Heavy Attack - Stringblade cast with Heaven’s Clarity', default: true }, mods: [{ key: 'multBonus', value: 100 }],
+      appliesTo: { rows: /^Heaven's Reckoning/, label: 'Heaven’s Reckoning' } },
     { seq: 1, id: 'c.qing.s1', group: 'sequence', source: 'S1 · Like Clouds That Meet and Drift Apart', text: 'Crit. Rate +16%', mods: [{ key: 'critRate', value: 16 }] },
     { seq: 2, id: 'c.qing.s2max', group: 'sequence', source: 'S2 · Like Petals That Fall Without a Sound', text: 'Mindlock stack limit 15 → 25',
       mods: [], raisesMax: { key: 'c.qing.mindlock', to: 25 } },
@@ -480,10 +486,11 @@ export const KITS: Record<string, KitEffect[]> = {
 
 /** Shown in the UI so users know these parts of the kit aren't in the numbers yet. */
 export const NOT_MODELLED: Record<string, string[]> = {
+  Qingxiao: ['S1 Juque Perdition: its row exists, rotations don’t trigger it', 'Mindlock stacks follow their toggle (not counted from her moves)', 'Heart Sword Intent per hit: estimate (HEART_SWORD_INTENT_GAIN)'],
   Hiyuki: ['Glacio Bite DMG and its Snow Rust / S6 Amplify: rotations only', 'Outro: Glacio Amplify for teammates (Phase 3)'],
   Cartethyia: ['Aero Erosion DMG: rotations only; her stack limit raises (inherent, S2) and Fleurdelys’ halved tick interval aren’t simulated', 'S2: 3 Aero Erosion + an immediate Aero Erosion hit', 'Outro: Aero Amplify for teammates (Phase 3)'],
   Chisa: ['S1 fixed 61,803 Havoc DMG', 'Sawring - Eradication Ring of Chainsaw bonus: rotations only (the single-hit view counts none spent)'],
-  Hsin: ['Electro Flare from Formshift and Fleeting Thunder (filling to the stack limit), Thunderglow / Heart of Thunder hits (S1), S3 extra Electro Flare hit, S6 Electro Flare crits', 'Unison Boon from Hsin for teammates'],
+  Hsin: ['Soaring Pillar hits from Edict (one per second after Formshift, up to 21)', 'Answering / Illumining Heart per hit: estimates (HSIN_GAIN)', 'Electro Flare from Formshift and Fleeting Thunder (filling to the stack limit), Thunderglow / Heart of Thunder hits (S1), S3 extra Electro Flare hit, S6 Electro Flare crits', 'Unison Boon from Hsin for teammates'],
   Suisui: ['Healing (Enrichment, Spring\'s Birth, Plume Step)'],
   Lucilla: ['Her own hits in Resonance Mode - Echo count as Echo Skill DMG in game; here they stay Basic Attack DMG'],
   Ciaccona: ['Yellow Tonic’s Spectro Frazzle (her Tonic always counts as Green: Aero Erosion)'],

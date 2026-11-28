@@ -13,7 +13,7 @@ export function defaultBuild(characterId: number): Build {
   return { characterId, sequence: 0, skillLevels: {}, weapon: { id: w.id, rank: 1 }, echoes: [], conditions: {} };
 }
 
-type Builds = Record<number, Build>;
+export type Builds = Record<number, Build>;
 
 /** Attaches my own builds to linked teammates (one level deep: a teammate's own team is left out). */
 export function linkTeam(b: Build, builds: Builds): Build {

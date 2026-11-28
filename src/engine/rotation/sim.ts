@@ -86,6 +86,8 @@ export interface SimResult {
   lanes: BuffLane[];
   /** each Resonator's state after each step (what the buttons do next) */
   states: Map<number, MachineState>[];
+  /** each Resonator's Resonance Energy after each step (off-field gains included) */
+  energies: Map<number, number>[];
   /** how each switch happened, by step index */
   swaps: Record<number, 'intro' | 'quick'>;
 }
@@ -101,13 +103,16 @@ const ownerOf = (e: Effect, build: Build) => {
 const num = (v: string | undefined) => (v ? Number.parseFloat(v) || 0 : 0);
 const nameOf = (row: string) => row.replace(/ DMG$/, '');
 
+/** Share of the on-field Resonator's base hit Energy that each off-field teammate gains (wiki: Energy Regen). */
+export const OFF_FIELD_ENERGY = 0.5;
+
 /** Concerto, Resonance Energy (before Energy Regen) and Resonance Cost of a move, from the game data. */
 export function moveResources(c: Character, move: Move, extra: Skill[] = []) {
   // onHit: the part of `concerto` that comes from the hits landing (the rest comes on cast: "Concerto Regen" rows,
   // text bonuses), which is what a swap cancel delays
   let concerto = 0, energy = 0, onHit = 0;
   const skills = [...c.skills, ...extra];
-  const rowsOfKind = (kind: SkillKind) => skills.filter((s) => s.kind === kind).flatMap((s) => s.rows);
+  const rowsOfKind = (kind: SkillKind) => skills.filter((s) => s.kind === kind).flatMap((s) => s.rows).map(costLabel);
   const find = (kind: SkillKind, label: string) => rowsOfKind(kind).find((r) => r.label === label);
   /** "Foreclaiming: Blade Liberation Resonance Cost" belongs to "Foreclaiming: Blade Liberation Base DMG" */
   const own = (kind: SkillKind, row: string, what: string) =>
@@ -123,6 +128,8 @@ export function moveResources(c: Character, move: Move, extra: Skill[] = []) {
     energy += times * (row?.hits ?? []).reduce((s, h) => s + (h.energy ?? 0) * h.count, 0);
   }
   concerto += move.concerto ?? 0;
+  // what the hits generate; off-field teammates get half of it (flat restores from the text are the Resonator's own)
+  const shared = energy;
   energy += move.energy ?? 0;
   // a move with no damage of its own takes its skill's named rows ("A Knight's Heartfelt Prayers Concerto Regen")
   if (move.named) concerto += num(find(move.kind, `${move.named} Concerto Regen`)?.values.at(-1));
@@ -137,17 +144,20 @@ export function moveResources(c: Character, move: Move, extra: Skill[] = []) {
       cost = named ? num(named.values.at(-1)) : mine ? num(mine.values.at(-1)) : hasNamed ? 0 : num(find('Liberation', 'Resonance Cost')?.values.at(-1));
     }
   }
-  return { concerto, energy, cost, onHit };
+  return { concerto, energy, cost, onHit, shared };
 }
 
-/** The most Resonance Energy a Resonator holds: their (largest) Liberation cost. */
+/** Some kits say "Resonance Energy Cost" (Mornye, Denia, Lynae, Luuk Herssen): read both as "Resonance Cost". */
+const costLabel = <R extends { label: string }>(r: R): R => (/Resonance Energy Cost$/.test(r.label) ? { ...r, label: r.label.replace(/Resonance Energy Cost$/, 'Resonance Cost') } : r);
+
+/** The most Resonance Energy a Resonator holds: their (largest) Liberation cost; 0 for Lucilla and Phrolova (their text says so). */
 export function maxEnergyOf(c: Character) {
-  return Math.max(0, ...c.skills.filter((s) => s.kind === 'Liberation').flatMap((s) => s.rows).filter((r) => /Resonance Cost$/.test(r.label)).map((r) => num(r.values.at(-1))));
+  return Math.max(0, ...c.skills.filter((s) => s.kind === 'Liberation').flatMap((s) => s.rows).map(costLabel).filter((r) => /Resonance Cost$/.test(r.label)).map((r) => num(r.values.at(-1))));
 }
 
 /** Walk a rotation: resolve presses, switches, Concerto, Energy and timed buffs, and sum the damage. */
 export function simulate(rotation: Pick<Rotation, 'steps' | 'freezeLiberation' | 'fullConcerto' | 'emptyEnergy'>, builds: Record<number, Build | undefined>, data: GameData): SimResult {
-  const machine = (id: number): Machine => machineFor(id, data, builds[id]?.sequence ?? 0);
+  const machine = (id: number): Machine => machineFor(id, data, builds[id]?.sequence ?? 0, builds[id]?.conditions);
   const states = new Map<number, MachineState>();
   const state = (id: number) => states.get(id) ?? machine(id).initial();
 
@@ -254,6 +264,7 @@ export function simulate(rotation: Pick<Rotation, 'steps' | 'freezeLiberation' |
   const weaponCd = new Map<string, number>();
   const moves: SimMove[] = [];
   const snapshots: Map<number, MachineState>[] = [];
+  const energySnaps: Map<number, number>[] = [];
   const swaps: Record<number, 'intro' | 'quick'> = {};
   let t = 0;
   let onField: number | undefined;
@@ -284,8 +295,15 @@ export function simulate(rotation: Pick<Rotation, 'steps' | 'freezeLiberation' |
       if (e + 1e-6 < res.cost) warn.push(`Not enough Resonance Energy (${Math.floor(e)} / ${res.cost})`);
       e = Math.max(0, e - res.cost);
     }
-    e = Math.min(maxE(char) || Infinity, e + res.energy * (b ? er(b) : 1));
+    e = Math.min(maxE(char), e + res.energy * (b ? er(b) : 1));
     energy.set(char, e);
+    // off-field Resonators get 50% of the Energy the on-field hits generate (the base amount, not the attacker's
+    // Energy Regen), times their own Energy Regen (wiki: Energy Regen; checked on toa_3, see the test)
+    if (res.shared) for (const id of Object.keys(builds).map(Number)) {
+      const mate = builds[id];
+      if (id === char || !mate) continue;
+      energy.set(id, Math.min(maxE(id), ener(id) + res.shared * OFF_FIELD_ENERGY * er(mate)));
+    }
     // weapon passives that restore Concerto on an action (Variation: Resonance Skill +16 at R5)
     let fromWeapon = 0;
     if (b && move.kind !== 'Outro') {
@@ -340,6 +358,7 @@ export function simulate(rotation: Pick<Rotation, 'steps' | 'freezeLiberation' |
     const cancelled = !!s.cancel && !!following && following.char !== s.char;
     perform(i, s.char, move, 'press', cancelled ? 0 : timeOf(s.char, move, s.seconds), s.cancel && !cancelled ? ['Swap cancel only works right before switching Resonators'] : [], cancelled);
     snapshots.push(new Map(states));
+    energySnaps.push(new Map(Object.keys(builds).map((id) => [Number(id), ener(Number(id))])));
   });
   // ticks that land before the rotation ends
   const tail = statusHits(tracker.advance(t), t);
@@ -365,7 +384,7 @@ export function simulate(rotation: Pick<Rotation, 'steps' | 'freezeLiberation' |
   for (const l of lanes.values()) l.intervals = merge(l.intervals);
 
   const total = moves.reduce((s, m) => s + m.damage, 0);
-  return { moves, total, time: t, dps: t > 0 ? total / t : 0, byChar, lanes: [...lanes.values()].filter((l) => l.intervals.length), states: snapshots, swaps };
+  return { moves, total, time: t, dps: t > 0 ? total / t : 0, byChar, lanes: [...lanes.values()].filter((l) => l.intervals.length), states: snapshots, energies: energySnaps, swaps };
 }
 
 function merge(list: [number, number][]): [number, number][] {

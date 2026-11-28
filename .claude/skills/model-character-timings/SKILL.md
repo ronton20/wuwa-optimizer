@@ -110,3 +110,8 @@ rotation once. A `notes.md` with sequence, weapon and what each clip shows.
 ## Grow this skill
 
 When a kind of move needs a new rule to measure (e.g. moves that continue during a switch), add it to step 3.
+- Hiyuki training-room clip (hiyuki/Hiyuki timings.mp4, 2026-11-28): no ToA timer or input display; clips cut in
+  Clipchamp, found by the purple title cards (`signalstats` U>150 and V>140). Times are first frame → idle, so they
+  are animation lengths, not cancel points. Frost Splinter ~2.1 s, Present Self Stage 3 ~1.4 s (the ToA
+  Intro → Inward Vision stretch is ~0.8 s longer than the two together), Skill 1.7, Jade Cleave 1.1, Petalfall 0.9,
+  Iai 1.0, Inward Vision 4.1, Blade Liberation 6.0, Bitterfrost 3.1.

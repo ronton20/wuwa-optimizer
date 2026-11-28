@@ -84,6 +84,16 @@ for (const c of data.characters) {
   }
 }
 
+// in-combat button icons (SP_Icon<Name>A1 = Hiyuki's Iai…): not listed in the game data, but they sit next to the skill-tree
+// icons in the character's own folder. Machines pick them per move (Move.icon). shortcut: names are probed, so the
+// misses are asked again on every run; list the real ones per character if that gets slow.
+for (const c of data.characters) {
+  const own = c.skills.map((sk) => sk.icon?.match(/^(.*\/SkillIcon(\w+)\/SP_Icon\2)[A-Z0-9]+$/)).find(Boolean);
+  if (!own) continue;
+  for (const l of 'ABCE') for (const n of [1, 2, 3])
+    jobs.push({ key: `hud:${c.id}:${l}${n}`, out: `img/hud/${c.id}-${l}${n}.webp`, urls: res(`${own[1]}${l}${n}`) });
+}
+
 const manifest: Record<string, string> = {};
 const missing: string[] = [];
 const fromSource: Record<string, number> = {};

@@ -17,7 +17,7 @@ export const GROUP_COLOR: Record<string, string> = {
 };
 
 export type ImageKey = `char:${number}` | `charArt:${number}` | `weapon:${number}` | `echo:${number}` | `echoHead:${number}` | `sonata:${number}`
-  | `skill:${number}` | `seq:${number}-${number}` | `node:${string}`;
+  | `skill:${number}` | `seq:${number}-${number}` | `node:${string}` | `hud:${number}:${string}`;
 
 /**
  * URL of a mirrored image, or '' when it was never downloaded (see scripts/data/images.ts).

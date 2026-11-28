@@ -17,13 +17,25 @@ export interface RecordedTimes {
 // tests-support/recordings/hiyuki/toa_1.mp4 and toa_3.mp4 with their press lists, 2026-11-27.
 export const RECORDED_TIMES: Record<string, RecordedTimes> = {
   Hiyuki: {
-    source: 'ToA floors 1 and 3 (hiyuki/toa_1, toa_3), 2026-11-27',
+    source: 'ToA floors 1 and 3 (hiyuki/toa_1, toa_3), 2026-11-27; training-room animations (hiyuki/Hiyuki timings.mp4), 2026-11-28',
     // switching in with Outro + Intro hides the UI for 1.48–1.70 s (4 switches)
     kinds: { intro: 1.6 },
     moves: {
-      // Intro landing → Inward Vision cast took 4.2 / 4.3 / 4.5 s; split by eye where she steps back to charge
-      'Basic Attack - Present Self Stage 3': 2.8,
-      'Heavy Attack - Frost Splinter: Present Self': 1.6,
+      // training room, each move from its first frame to idle (no input display, so not cancel points)
+      'Basic Attack - Present Self Stage 1': 0.7,
+      'Basic Attack - Present Self Stage 2': 0.55,
+      'Resonance Skill - Present Self': 1.7,
+      'Resonance Skill - Frostblight: Jade Cleave': 1.1,
+      'Resonance Skill - Frostblight: Petalfall': 0.9,
+      'Basic Attack - Iai': 1.0, // 2nd and 3rd Iai of three; the 1st ran 2.6 s with the Iai Stance entry
+      // real animation; ToA stops the clock for these (FROZEN_LIBERATION_TIME / stopsClock)
+      'Resonance Liberation - Foreclaiming: Inward Vision': 4.1,
+      'Resonance Liberation - Foreclaiming: Blade Liberation': 6.0,
+      'Heavy Attack - Bitterfrost: Foreclaimed Self': 3.1,
+      // Intro landing → Inward Vision cast took 4.2 / 4.3 / 4.5 s in ToA. Frost Splinter alone is ~2.1 s in the
+      // training room; Stage 3 alone is ~1.4 s there, so ~0.8 s of the ToA stretch is the Intro's tail / walking in
+      'Basic Attack - Present Self Stage 3': 2.2,
+      'Heavy Attack - Frost Splinter: Present Self': 2.1,
       // Inward Vision → first Resonance Skill: 4.3 s (with an Echo) and 4.2 s for the 5-stage string
       'Basic Attack - Foreclaimed Self Stage 1': 0.85,
       'Basic Attack - Foreclaimed Self Stage 2': 0.85,

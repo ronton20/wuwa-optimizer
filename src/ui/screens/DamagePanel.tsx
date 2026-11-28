@@ -36,11 +36,21 @@ const strongest = (rows: RowTotal[], focus: Focus) => rows.reduce((a, r) => (r[f
 
 export interface CompareColumn { id: string; name: string; hits: HitResult[] }
 
+/** The team rotation this Resonator is in, simulated with this build (and with the baseline saved build). */
+export interface RotationSummary {
+  team: string; rotation: string; dps: number;
+  /** this Resonator's share of the rotation's damage, 0..1 */
+  share: number;
+  base?: { name: string; dps: number };
+  onOpen: () => void;
+}
+
 interface Props {
   hits: HitResult[];
   enemy: { level: number };
   /** pinned saved builds (first = baseline); the live build is added as the last column */
   compare?: CompareColumn[];
+  rotation?: RotationSummary;
 }
 
 /** Everything the damage panel/sheet shows, computed once. */
@@ -94,6 +104,20 @@ function Headline({ v, enemy, compact }: { v: View; enemy: Props['enemy']; compa
       </div>
       <div className="mt-2 text-[11px] text-muted">{focus === 'avg' ? ui.average : ui.critHit} · {ui.enemy(enemy.level)}</div>
     </div>
+  );
+}
+
+/** Rotation DPS: the number that matters most, so it sits above the single hits. */
+function RotationLine({ r }: { r: RotationSummary }) {
+  return (
+    <button onClick={r.onOpen} title={ui.rotationDpsHint} className="block w-full px-5 pb-3 pt-4 text-left transition hover:bg-white/5">
+      <div className="text-xs uppercase tracking-[0.18em] text-muted">{ui.rotationDps}</div>
+      <div className="mt-1 flex items-baseline gap-3">
+        <span className="font-display text-3xl font-semibold text-gold-soft"><AnimatedNumber value={r.dps} /></span>
+        {r.base && <span className="flex flex-col leading-tight"><Delta now={r.dps} base={r.base.dps} /><span className="text-[10px] text-muted">{ui.vs(r.base.name)}</span></span>}
+      </div>
+      <div className="mt-1 truncate text-[11px] text-muted">{ui.rotationOf(r.team, r.rotation, Math.round(r.share * 100))}</div>
+    </button>
   );
 }
 
@@ -243,6 +267,7 @@ export function DamagePanel(props: Props) {
   if (!v.top) return null;
   return (
     <aside className="glass hidden max-h-[calc(100vh-2rem)] flex-col overflow-hidden rounded-2xl lg:sticky lg:top-4 lg:flex">
+      {props.rotation && <div className="border-b border-white/10"><RotationLine r={props.rotation} /></div>}
       <div className="border-b border-white/10"><Headline v={v} enemy={props.enemy} /></div>
       {v.columns.length === 0 && <div className="border-b border-white/10 px-3 pt-2.5"><Legend /></div>}
       <div className="flex-1 overflow-y-auto p-3 scroll-thin"><Rows v={v} /></div>
@@ -275,6 +300,7 @@ export function DamageSheet(props: Props) {
           {open && (
             <motion.div key="body" initial={{ height: 0 }} animate={{ height: 'auto' }} exit={{ height: 0 }} transition={{ duration: 0.25, ease: [0.2, 0.7, 0.2, 1] }}
               className="flex-1 overflow-y-auto border-t border-white/10 scroll-thin">
+              {props.rotation && <div className="border-b border-white/10"><RotationLine r={props.rotation} /></div>}
               <Headline v={v} enemy={props.enemy} compact />
               {v.columns.length === 0 && <div className="sticky top-0 z-10 bg-night-900/95 px-3 pt-2 backdrop-blur"><Legend /></div>}
               <div className="p-3 pt-0"><Rows v={v} /></div>

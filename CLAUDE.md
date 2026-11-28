@@ -69,13 +69,14 @@ a `t{n}.` prefix on their ids and keys. Linked teammates follow the owner's own 
 
 ### Rotations (`src/engine/rotation/`)
 
-- **Buttons:** every character has Basic, Heavy, Skill, Liberation, Echo, plus kit specials (Hiyuki's Iai).
+- **Buttons:** every character has Basic, Heavy, Skill, Liberation, Echo, plus kit specials (Hiyuki's Iai Stance, 0 s: Basic is then Iai). Moves can carry their in-combat button icon (`Move.icon` → `hud:<id>:<A1…>`, mirrored by `data:images`) and `special` (the button glows when it's ready).
   A press becomes what that button does in the game *right now* (state machine in `actions.ts`; `machineFor(id,
   data, sequence)`). The UI shows the press; the math uses the real row. "Every move" lists every damage row
   with its type ("Resonance Liberation - …").
 - **Hand-made machines:** Hiyuki, Suisui, Lucilla (checked against the owner's in-game rotation; the test
   "the in-game Suisui > Lucilla > Hiyuki rotation…" replays it), Chisa, Ciaccona, Cartethyia (the owner's ToA floor 1
-  press list replays in "Chisa, Ciaccona and Cartethyia machines…"). Everyone else uses `genericMachine`.
+  press list replays in "Chisa, Ciaccona and Cartethyia machines…"). Qingxiao and Hsin (from the kit text only; Hsin's machine
+  follows her Resonance Mode: `machineFor` gets the build's `….mode` picks). Everyone else uses `genericMachine`.
 - **Gauges from the data:** `HitTerm.special` (damage.json SpecialEnergy1..5) is each hit's gain on the Resonator's
   own gauge: `gaugeOf(c, kind, row, slot)` (Hiyuki's Frostheart = slot 1, Chisa's Ring of Chainsaw = slot 0).
   Where a gauge isn't in the data, the machine's constant says so (`FROSTHEART_SKILL`, `CONVICTION_GAIN`).
@@ -83,7 +84,8 @@ a `t{n}.` prefix on their ids and keys. Linked teammates follow the owner's own 
   (`choice` + `RotationStep.option`, e.g. Snowforged Blades used), sequence changes.
 - **Simulator (`sim.ts`):** switching adds Outro + Intro only with full Concerto (or forced per step);
   Concerto/Energy from the data (`concerto`/`energy` per hit, "X Concerto Regen" rows, Resonance Cost) plus
-  weapon passives that restore Concerto; timed buffs (`timing.ts`): Outros, and toggles whose trigger is a plain
+  weapon passives that restore Concerto; off-field Resonators gain 50% of the on-field hits' base Energy × their own
+  Energy Regen (`OFF_FIELD_ENERGY`, wiki; matches the owner's toa_3 clip in `energy.test.ts`); timed buffs (`timing.ts`): Outros, and toggles whose trigger is a plain
   action and whose own text (effect, sequence, weapon, sonata, echo) gives a duration. Everything else follows
   its Buffs-tab toggle and is listed as "Other buffs counted".
 - **Swap cancel** (`RotationStep.cancel`): switching mid-animation; the move lands, takes no time; its cast Concerto
@@ -118,8 +120,9 @@ attack, and one Negative Status damage number (e.g. a Glacio Bite hit) to confir
 The plan, in order:
 1. Rotation accuracy: recorded timings, time the remaining toggle buffs (hit/debuff/stack triggers), confirm the
    Negative Status base, Havoc Bane's DEF cut on hits and the other stack-limit raises.
-2. Rotation DPS as the single source of truth: show the main team's rotation DPS on each character and in saved
-   build comparisons; hand-made machines for more characters (skill `add-rotation-machine`).
+2. Rotation DPS as the single source of truth. Done: the damage panel shows the Resonator's team rotation DPS (main
+   team first; `state/rotationDps.ts`) and the pinned baseline saved build's DPS in the same rotation. Next:
+   hand-made machines for the other 15 kits (skill `model-character`), DPS per saved build in the Builds menu.
 3. Optimizer v2: maximize rotation DPS; pick from the owner's echo pool + spares; main echo of any cost; builds
    under 12 cost (e.g. Cartethyia); 4/3/3/1/1 and 4/4/1/1/1 with a 1-piece set plus two 2-piece sets.
 4. Substat playground: change substats, see rotation DPS live.
